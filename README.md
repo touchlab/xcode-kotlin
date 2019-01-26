@@ -45,11 +45,9 @@ Be careful not to have Kotlin source added to the iOS Bundle output.
 ### Sources
 
 Setting up the Plugin has been an amalgam of various source projects, as Xcode "Plugins"
-are undocumented. We aren't adding any "code", so there aren't any signing issues.
-
-[xcode-graphql](https://github.com/apollographql/xcode-graphql)
-[xcbuild](https://github.com/facebook/xcbuild)
-[rust-xcode-plugin](https://github.com/mtak-/rust-xcode-plugin)
+are undocumented. The most significant piece, the language color file, came from other color 
+files shipped with Xcode. Xcode plugin file from [GraphQL](https://github.com/apollographql/xcode-graphql/blob/master/GraphQL.ideplugin/Contents/Resources/GraphQL.xcplugindata)
 
 LLDB formatting originally comes from the Kotlin/Native project, source [konan_lldb.py](https://github.com/JetBrains/kotlin-native/blob/dbb162a4b523071f31913e888e212df344a1b61e/llvmDebugInfoC/src/scripts/konan_lldb.py), although the way data is grabbed has been heavily modified to better
 support an interactive debugger.
+
