@@ -18,12 +18,14 @@
 # limitations under the License.
 #
 
+# Modified from original to better support interactive tools (specifically Xcode)
+# Some additional mods to better match how examples work http://llvm.org/svn/llvm-project/lldb/trunk/examples/synthetic/bitfield/example.py
+
 #
 # (lldb) command script import llvmDebugInfoC/src/scripts/konan_lldb.py
 # (lldb) p kotlin_variable
 #
 
-import threading
 import lldb
 import struct
 
@@ -88,66 +90,66 @@ def select_provider(lldb_val):
     return __FACTORY['string'](lldb_val) if is_string(lldb_val) else __FACTORY['array'](lldb_val) if is_array(
         lldb_val) else __FACTORY['object'](lldb_val)
 
-lock = threading.RLock()
-
-def types_list(valobj, lldb):
-    global _types
-    if not _types:
-        lock.acquire()
-        _types = [
-            valobj.GetType().GetBasicType(lldb.eBasicTypeVoid).GetPointerType(),
-            valobj.GetType(),
-            valobj.GetType().GetBasicType(lldb.eBasicTypeChar),
-            valobj.GetType().GetBasicType(lldb.eBasicTypeShort),
-            valobj.GetType().GetBasicType(lldb.eBasicTypeInt),
-            valobj.GetType().GetBasicType(lldb.eBasicTypeLongLong),
-            valobj.GetType().GetBasicType(lldb.eBasicTypeFloat),
-            valobj.GetType().GetBasicType(lldb.eBasicTypeDouble),
-            valobj.GetType().GetBasicType(lldb.eBasicTypeVoid).GetPointerType(),
-            valobj.GetType().GetBasicType(lldb.eBasicTypeBool)
-        ]
-        lock.release()
-    return _types
-
-_types = []
-
 class KonanHelperProvider(lldb.SBSyntheticValueProvider):
 
     def __init__(self, valobj):
+        self._valobj = valobj
         self._target = lldb.debugger.GetSelectedTarget()
         self._process = self._target.GetProcess()
-        self._valobj = valobj
         self._ptr = lldb_val_to_ptr(self._valobj)
         self._children_count = int(evaluate("(int)Konan_DebugGetFieldCount({})".format(self._ptr)).GetValue())
         self._children = []
-        self._values = []
-        # self._children_types = []
-        self._children_type_names = []
-        self._children_type_addresses = []
+        self._childvalues = [None for x in range(self.num_children())]
+
+    def _type_generator(self, index):
+        if index == 0:
+            return self._valobj.GetType().GetBasicType(lldb.eBasicTypeVoid).GetPointerType()
+        elif index == 1:
+            return self._valobj.GetType()
+        elif index == 2:
+            return self._valobj.GetType().GetBasicType(lldb.eBasicTypeChar)
+        elif index == 3:
+            return self._valobj.GetType().GetBasicType(lldb.eBasicTypeShort)
+        elif index == 4:
+            return self._valobj.GetType().GetBasicType(lldb.eBasicTypeInt)
+        elif index == 5:
+            return self._valobj.GetType().GetBasicType(lldb.eBasicTypeLongLong)
+        elif index == 6:
+            return self._valobj.GetType().GetBasicType(lldb.eBasicTypeFloat)
+        elif index == 7:
+            return self._valobj.GetType().GetBasicType(lldb.eBasicTypeDouble)
+        elif index == 8:
+            return self._valobj.GetType().GetBasicType(lldb.eBasicTypeVoid).GetPointerType()
+        elif index == 9:
+            return self._valobj.GetType().GetBasicType(lldb.eBasicTypeBool)
+        else:
+            return None
 
     def _type_convesion_lamb(self, index):
         if index == 0:
             return lambda address, name: self._valobj.CreateValueFromExpression(name, "(void *){:#x}".format(address))
-        if index == 1:
+        elif index == 1:
             return lambda address, name: self._create_synthetic_child(name)
-        if index == 2:
+        elif index == 2:
             return lambda address, name: self._valobj.CreateValueFromExpression(name, "(int8_t *){:#x}".format(address))
-        if index == 3:
+        elif index == 3:
             return lambda address, name: self._valobj.CreateValueFromExpression(name, "(int16_t *){:#x}".format(address))
-        if index == 4:
+        elif index == 4:
             return lambda address, name: self._valobj.CreateValueFromExpression(name, "(int32_t *){:#x}".format(address))
-        if index == 5:
+        elif index == 5:
             return lambda address, name: self._valobj.CreateValueFromExpression(name, "(int64_t *){:#x}".format(address))
-        if index == 6:
+        elif index == 6:
             return lambda address, name: self._valobj.CreateValueFromExpression(name, "(float *){:#x}".format(address))
-        if index == 7:
+        elif index == 7:
             return lambda address, name: self._valobj.CreateValueFromExpression(name, "(double *){:#x}".format(address))
-        if index == 8:
+        elif index == 8:
             return lambda address, name: self._valobj.CreateValueFromExpression(name, "(void **){:#x}".format(address))
-        if index == 9:
+        elif index == 9:
             return lambda address, name: self._valobj.CreateValueFromExpression(name, "(bool *){:#x}".format(address))
-        if index == 10:
+        elif index == 10:
             return lambda address, name: None
+        else:
+            return None
 
     def _child_type(self, index):
         return evaluate("(int)Konan_DebugGetFieldType({}, {})".format(self._ptr, index)).GetValueAsUnsigned()
@@ -155,32 +157,17 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
     def _children_type_address(self, index):
         return long(evaluate("(void *)Konan_DebugGetFieldAddress({}, {})".format(self._ptr, index)).GetValue(), 0)
 
-    # def _children_types_lazy(self):
-    #     if not self._children_types:
-    #         self._children_types = [
-    #             evaluate("(int)Konan_DebugGetFieldType({}, {})".format(self._ptr, child)).GetValueAsUnsigned()
-    #             for child in range(self._children_count)]
-    #     return self._children_types
-
-    # def _children_type_addresses_lazy(self):
-    #     if not self._children_type_addresses:
-    #         self._children_type_addresses = [
-    #             long(evaluate("(void *)Konan_DebugGetFieldAddress({}, {})".format(self._ptr, index)).GetValue(), 0) for
-    #             index in range(self._children_count)]
-    #     return self._children_type_addresses
-
-    # def _values_lazy(self):
-    #     if not self._values:
-    #         self._values = self._create_child_values()
-    #     return self._values
-
     def _read_string(self, expr, error):
         return self._process.ReadCStringFromMemory(long(evaluate(expr).GetValue(), 0), 0x1000, error)
 
     def _read_value(self, index):
-        value_type = self._child_type(index)
-        address = self._children_type_address(index)
-        return self._type_convesion_lamb(int(value_type))(address, str(self._children[index]))
+        result = self._childvalues[index]
+        if result is None:
+            value_type = self._child_type(index)
+            address = self._children_type_address(index)
+            result = self._type_convesion_lamb(int(value_type))(address, str(self._children[index]))
+            self._childvalues[index] = result
+        return result
 
     def _create_synthetic_child(self, name):
         index = self.get_child_index(name)
@@ -192,7 +179,7 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
         return value
 
     def _read_type(self, index):
-        return types_list(self._valobj, lldb)[int(evaluate("(int)Konan_DebugGetFieldType({}, {})".format(self._ptr, index)).GetValue())]
+        return self._type_generator(int(evaluate("(int)Konan_DebugGetFieldType({}, {})".format(self._ptr, index)).GetValue()))
 
     def _deref_or_obj_summary(self, index):
         value = self._read_value(index)
@@ -203,10 +190,6 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
             return ""
         else:
             return kotlin_object_type_summary(value.deref, None)
-
-    # def _create_child_values(self):
-    #     return [self._read_value(index) for index in range(self._children_count)]
-
 
 class KonanStringSyntheticProvider:
     def __init__(self, valobj):
@@ -280,6 +263,8 @@ class KonanObjectSyntheticProvider(KonanHelperProvider):
     def to_string(self):
         return ""
 
+#Cap array results to prevent super slow response
+MAX_VALUES = 20
 
 class KonanArraySyntheticProvider(KonanHelperProvider):
     def __init__(self, valobj):
@@ -290,20 +275,20 @@ class KonanArraySyntheticProvider(KonanHelperProvider):
         self._children = [x for x in range(self.num_children())]
 
     def num_children(self):
-        return min(self._children_count, 20)
+        return min(self._children_count, MAX_VALUES)
 
     def has_children(self):
         return self._children_count > 0
 
     def get_child_index(self, name):
         index = int(name)
-        return index if (0 <= index < self._children_count) else -1
+        return index if (0 <= index < self.num_children()) else -1
 
     def get_child_at_index(self, index):
         return self._read_value(index)
 
     def to_string(self):
-        return [self._children_count]#[self._deref_or_obj_summary(i) for i in range(self._children_count)]
+        return [self._children_count]
 
 
 class KonanProxyTypeProvider:
