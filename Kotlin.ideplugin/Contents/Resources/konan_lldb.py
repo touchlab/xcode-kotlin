@@ -36,6 +36,20 @@ def lldb_val_to_ptr(lldb_val):
     addr = lldb_val.GetValueAsUnsigned()
     return '((struct ObjHeader *) {:#x})'.format(addr)
 
+TYPE_INFO_REF = "*(void **)((uintptr_t)(*(void**){0}) & ~0x3)"
+TYPE_INFO_DOUBLE_REF = "**(void***)((uintptr_t)(*(void**){0}) & ~0x3)"
+
+def type_info_ptr(value):
+    #This will be done when creating the proxy, so we don't need to repeat. Would be nice to have tests...
+    # if not check_type_info(value):
+    #     return -1
+
+    expr = "*(void **)((uintptr_t)(*(void**){0}) & ~0x3)".format(value.unsigned)
+    result = evaluate(expr)
+    if result.IsValid():
+        return result.GetValue()
+    else:
+        return -1
 
 def evaluate(expr):
     return lldb.debugger.GetSelectedTarget().EvaluateExpression(expr, lldb.SBExpressionOptions())
@@ -58,7 +72,7 @@ def check_type_info(value):
     meta-object pointed by TypeInfo. Two lower bits are reserved for memory management needs see runtime/src/main/cpp/Memory.h."""
     if str(value.type) != "struct ObjHeader *":
         return False
-    expr = "*(void **)((uintptr_t)(*(void**){0}) & ~0x3) == **(void***)((uintptr_t)(*(void**){0}) & ~0x3)".format(value.unsigned)
+    expr = (TYPE_INFO_REF + " == "+ TYPE_INFO_DOUBLE_REF).format(value.unsigned)
     result = evaluate(expr)
     return result.IsValid() and result.GetValue() == "true"
 
@@ -98,7 +112,7 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
         self._process = self._target.GetProcess()
         self._ptr = lldb_val_to_ptr(self._valobj)
         self._children_count = int(evaluate("(int)Konan_DebugGetFieldCount({})".format(self._ptr)).GetValue())
-        self._children = []
+        self._children_type_info = []
         self._childvalues = [None for x in range(self.num_children())]
 
     def _type_generator(self, index):
@@ -163,9 +177,10 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
     def _read_value(self, index):
         result = self._childvalues[index]
         if result is None:
-            value_type = self._child_type(index)
-            address = self._children_type_address(index)
-            result = self._type_convesion_lamb(int(value_type))(address, str(self._children[index]))
+            type_info = self._children_type_info[index]
+            value_type = type_info.type
+            address = type_info.address
+            result = self._type_convesion_lamb(int(value_type))(address, str(type_info.name))
             self._childvalues[index] = result
         return result
 
@@ -236,13 +251,23 @@ class KonanStringSyntheticProvider:
 class DebuggerException(Exception):
     pass
 
+TYPES_CACHE = {}
+
 class KonanObjectSyntheticProvider(KonanHelperProvider):
     def __init__(self, valobj):
         super(KonanObjectSyntheticProvider, self).__init__(valobj)
         error = lldb.SBError()
-        self._children = [
-            self._read_string("(const char *)Konan_DebugGetFieldName({}, (int){})".format(self._ptr, i), error) for i in
-            range(self._children_count) if error.Success()]
+        tip = type_info_ptr(valobj)
+        if tip != -1 and tip in TYPES_CACHE:
+            # print "cached "+ str(tip)
+            self._children_type_info = TYPES_CACHE[tip]
+        else:
+            self._children_type_info = \
+            [ChildMetaInfo(
+                self._read_string("(const char *)Konan_DebugGetFieldName({}, (int){})".format(self._ptr, x), error), self._child_type(x), self._children_type_address(x)) for x in range(self._children_count)]
+            if tip != -1:
+                TYPES_CACHE[tip] = self._children_type_info
+
         if not error.Success():
             raise DebuggerException()
 
@@ -253,15 +278,23 @@ class KonanObjectSyntheticProvider(KonanHelperProvider):
         return self._children_count > 0
 
     def get_child_index(self, name):
-        if not name in self._children:
-            return -1
-        return self._children.index(name)
+        for i in range(len(self._children_type_info)):
+            if self._children_type_info[i].name == name:
+                return i
+
+        return -1
 
     def get_child_at_index(self, index):
         return self._read_value(index)
 
     def to_string(self):
         return ""
+
+class ChildMetaInfo:
+    def __init__(self, name, type, address):
+        self.name = name
+        self.type = type
+        self.address = address
 
 #Cap array results to prevent super slow response
 MAX_VALUES = 20
@@ -272,7 +305,8 @@ class KonanArraySyntheticProvider(KonanHelperProvider):
         if self._ptr is None:
             return
         valobj.SetSyntheticChildrenGenerated(True)
-        self._children = [x for x in range(self.num_children())]
+        self._children_type_info = [ChildMetaInfo(x, self._child_type(x), self._children_type_address(x)) for x in range(self.num_children())]
+        # self._children = [x for x in range(self.num_children())]
 
     def num_children(self):
         return min(self._children_count, MAX_VALUES)
