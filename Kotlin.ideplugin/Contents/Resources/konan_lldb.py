@@ -262,6 +262,8 @@ class KonanObjectSyntheticProvider(KonanHelperProvider):
             # print "cached "+ str(tip)
             self._children_type_info = TYPES_CACHE[tip]
         else:
+            # print "Pointer: "+ str(tip)
+            # print "Typename: "+ self._read_string("CreateCStringFromString(((TypeInfo*){})->relativeName_)".format(tip), error)
             self._children_type_info = \
             [ChildMetaInfo(
                 self._read_string("(const char *)Konan_DebugGetFieldName({}, (int){})".format(self._ptr, x), error), self._child_type(x), self._children_type_address(x)) for x in range(self._children_count)]

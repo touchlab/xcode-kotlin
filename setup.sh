@@ -30,10 +30,10 @@ cp Kotlin.xclangspec $spec_dir
 
 lldb_format="command script import ~/Library/Developer/Xcode/Plug-ins/Kotlin.ideplugin/Contents/Resources/konan_lldb.py"
 
-if grep --quiet	-s kotlin_lldb ~/.lldbinit
+if grep --quiet	-s konan_lldb ~/.lldbinit
 then
     # code if found
-		echo "konan_lldb.py found in ~/.lldbinit, which means this was probably set up previously. You may want to manually check ~/.lldbinit"
+		echo "konan_lldb.py found in ~/.lldbinit"
 else
     # code if not found
 		echo $lldb_format >> ~/.lldbinit
