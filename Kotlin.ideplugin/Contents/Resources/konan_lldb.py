@@ -108,12 +108,13 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
 
     def __init__(self, valobj):
         self._valobj = valobj
-        self._target = lldb.debugger.GetSelectedTarget()
-        self._process = self._target.GetProcess()
+        self._process = lldb.debugger.GetSelectedTarget().GetProcess()
         self._ptr = lldb_val_to_ptr(self._valobj)
-        self._children_count = int(evaluate("(int)Konan_DebugGetFieldCount({})".format(self._ptr)).GetValue())
         self._children_type_info = []
         self._childvalues = [None for x in range(self.num_children())]
+
+    def system_count_children(self):
+        return int(evaluate("(int)Konan_DebugGetFieldCount({})".format(self._ptr)).GetValue())
 
     def _type_generator(self, index):
         if index == 0:
@@ -174,9 +175,17 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
     def _read_string(self, expr, error):
         return self._process.ReadCStringFromMemory(long(evaluate(expr).GetValue(), 0), 0x1000, error)
 
+    def _read_string_dispose(self, expr, disp_expr, error):
+        str_ptr = long(evaluate(expr).GetValue(), 0)
+        read_string = self._process.ReadCStringFromMemory(str_ptr, 0x1000, error)
+        evaluate(disp_expr.format(str_ptr))
+        return read_string
+
     def _read_value(self, index):
         result = self._childvalues[index]
         if result is None:
+            if len(self._children_type_info) <= index:
+                return None
             type_info = self._children_type_info[index]
             value_type = type_info.type
             address = type_info.address
@@ -258,15 +267,30 @@ class KonanObjectSyntheticProvider(KonanHelperProvider):
         super(KonanObjectSyntheticProvider, self).__init__(valobj)
         error = lldb.SBError()
         tip = type_info_ptr(valobj)
+        classNameSummary = str("")
+
+        if tip != -1:
+            cnError = lldb.SBError()
+            classNameSummary = str(self._read_string_dispose("(const char *)XcodeKotlin_className({})".format(tip), "XcodeKotlin_disposeString({})", cnError))
+            if not cnError.Success():
+                classNameSummary = "(classname error)"
+
+        self._class_name_summary = classNameSummary
+
+        # if "AtomicReference" in self._class_name_summary:
+        #     print "AtomicReference yeah"
+        # el
         if tip != -1 and tip in TYPES_CACHE:
             # print "cached "+ str(tip)
             self._children_type_info = TYPES_CACHE[tip]
         else:
             # print "Pointer: "+ str(tip)
             # print "Typename: "+ self._read_string("CreateCStringFromString(((TypeInfo*){})->relativeName_)".format(tip), error)
+            kid_count = self.system_count_children()
             self._children_type_info = \
             [ChildMetaInfo(
-                self._read_string("(const char *)Konan_DebugGetFieldName({}, (int){})".format(self._ptr, x), error), self._child_type(x), self._children_type_address(x)) for x in range(self._children_count)]
+                self._read_string("(const char *)Konan_DebugGetFieldName({}, (int){})".format(self._ptr, x), error), self._child_type(x), self._children_type_address(x)) for x in range(kid_count)]
+
             if tip != -1:
                 TYPES_CACHE[tip] = self._children_type_info
 
@@ -274,10 +298,10 @@ class KonanObjectSyntheticProvider(KonanHelperProvider):
             raise DebuggerException()
 
     def num_children(self):
-        return self._children_count
+        return self.system_count_children()
 
     def has_children(self):
-        return self._children_count > 0
+        return self.num_children() > 0
 
     def get_child_index(self, name):
         for i in range(len(self._children_type_info)):
@@ -290,7 +314,7 @@ class KonanObjectSyntheticProvider(KonanHelperProvider):
         return self._read_value(index)
 
     def to_string(self):
-        return ""
+        return self._class_name_summary
 
 class ChildMetaInfo:
     def __init__(self, name, type, address):
@@ -311,10 +335,10 @@ class KonanArraySyntheticProvider(KonanHelperProvider):
         # self._children = [x for x in range(self.num_children())]
 
     def num_children(self):
-        return min(self._children_count, MAX_VALUES)
+        return min(self.system_count_children(), MAX_VALUES)
 
     def has_children(self):
-        return self._children_count > 0
+        return self.num_children() > 0
 
     def get_child_index(self, name):
         index = int(name)
@@ -324,7 +348,7 @@ class KonanArraySyntheticProvider(KonanHelperProvider):
         return self._read_value(index)
 
     def to_string(self):
-        return [self._children_count]
+        return [self.system_count_children()]
 
 
 class KonanProxyTypeProvider:
