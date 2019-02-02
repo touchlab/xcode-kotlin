@@ -112,11 +112,30 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
         # Can probably be in a global
         self._process = lldb.debugger.GetSelectedTarget().GetProcess()
         self._ptr = lldb_val_to_ptr(self._valobj)
-        self._children_type_info = []
+        self._base_address = self._valobj.GetValueAsUnsigned()
+        self._children_type_info = self._init_child_type_info()
         self._childvalues = [None for x in range(self.num_children())]
+
+    def _init_child_type_info(self):
+        return []
+
+    def num_children(self):
+        return len(self._children_type_info)
+
+    def has_children(self):
+        return self.num_children() > 0
+
+    def _child_info(self, index):
+        return self._children_type_info[index]
+
+    def get_child_at_index(self, index):
+        return self._read_value(index)
 
     def system_count_children(self):
         return system_count_children_global(self._ptr)
+
+    def _calc_offset(self, addr):
+        return addr - self._base_address
 
     def _type_generator(self, index):
         if index == 0:
@@ -187,22 +206,20 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
                 return None
             type_info = self._children_type_info[index]
             value_type = type_info.type
-            address = _children_type_address_global(self._ptr, index)
+            address = self._base_address + type_info.offset
             result = self._type_convesion_lamb(int(value_type))(address, str(type_info.name))
             self._childvalues[index] = result
         return result
 
     def _create_synthetic_child(self, name):
         index = self.get_child_index(name)
+        type_info = self._child_info(index)
         value = self._valobj.CreateChildAtOffset(str(name),
-                                                 self._children_type_address(index) - self._valobj.GetValueAsUnsigned(),
-                                                 self._read_type(index))
+                                                 type_info.offset,
+                                                 self._type_generator(type_info.type))
         value.SetSyntheticChildrenGenerated(True)
         value.SetPreferSyntheticValue(True)
         return value
-
-    def _read_type(self, index):
-        return self._type_generator(int(evaluate("(int)Konan_DebugGetFieldType({}, {})".format(self._ptr, index)).GetValue()))
 
     def _deref_or_obj_summary(self, index):
         value = self._read_value(index)
@@ -264,9 +281,10 @@ TYPES_CACHE = {}
 class KonanObjectSyntheticProvider(KonanHelperProvider):
     def __init__(self, valobj):
         super(KonanObjectSyntheticProvider, self).__init__(valobj)
-        self._children_type_info = self._child_types(type_info_ptr(valobj), self._ptr)
 
-    def _child_types(self, tip, ptr):
+    def _init_child_type_info(self):
+        tip = type_info_ptr(self._valobj)
+        ptr = self._ptr
         error = lldb.SBError()
         if tip != -1 and tip in TYPES_CACHE:
             return TYPES_CACHE[tip]
@@ -274,7 +292,7 @@ class KonanObjectSyntheticProvider(KonanHelperProvider):
             kid_count = system_count_children_global(ptr)
             children_type_info = \
                 [ChildMetaInfo(
-                    self._read_string("(const char *)Konan_DebugGetFieldName({}, (int){})".format(ptr, x), error), _child_type_global(ptr, x)) for x in range(kid_count)]
+                    self._read_string("(const char *)Konan_DebugGetFieldName({}, (int){})".format(ptr, x), error), _child_type_global(ptr, x), self._calc_offset(self._children_type_address(x))) for x in range(kid_count)]
 
             if tip != -1:
                 TYPES_CACHE[tip] = children_type_info
@@ -284,12 +302,6 @@ class KonanObjectSyntheticProvider(KonanHelperProvider):
 
             return children_type_info
 
-    def num_children(self):
-        return self.system_count_children()
-
-    def has_children(self):
-        return self.num_children() > 0
-
     def get_child_index(self, name):
         for i in range(len(self._children_type_info)):
             if self._children_type_info[i].name == name:
@@ -297,16 +309,14 @@ class KonanObjectSyntheticProvider(KonanHelperProvider):
 
         return -1
 
-    def get_child_at_index(self, index):
-        return self._read_value(index)
-
     def to_string(self):
         return ""
 
 class ChildMetaInfo:
-    def __init__(self, name, type):
+    def __init__(self, name, type, offset):
         self.name = name
         self.type = type
+        self.offset = offset
 
 #Cap array results to prevent super slow response
 MAX_VALUES = 20
@@ -317,25 +327,17 @@ class KonanArraySyntheticProvider(KonanHelperProvider):
         if self._ptr is None:
             return
         valobj.SetSyntheticChildrenGenerated(True)
-        self._children_type_info = [ChildMetaInfo(x, self._child_type(x)) for x in range(self.num_children())]
-        # self._children = [x for x in range(self.num_children())]
 
-    def num_children(self):
-        return min(self.system_count_children(), MAX_VALUES)
-
-    def has_children(self):
-        return self.num_children() > 0
+    def _init_child_type_info(self):
+        child_count = min(self.system_count_children(), MAX_VALUES)
+        return [ChildMetaInfo(x, self._child_type(x), self._calc_offset(self._children_type_address(x))) for x in range(child_count)]
 
     def get_child_index(self, name):
         index = int(name)
         return index if (0 <= index < self.num_children()) else -1
 
-    def get_child_at_index(self, index):
-        return self._read_value(index)
-
     def to_string(self):
         return [self.system_count_children()]
-
 
 class KonanProxyTypeProvider:
     def __init__(self, valobj, _):
