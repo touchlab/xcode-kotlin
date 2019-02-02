@@ -54,6 +54,11 @@ def type_info_ptr(value):
 def evaluate(expr):
     return lldb.debugger.GetSelectedTarget().EvaluateExpression(expr, lldb.SBExpressionOptions())
 
+def _read_string_dispose_global(process, expr, disp_expr, error):
+    str_ptr = long(evaluate(expr).GetValue(), 0)
+    read_string = process.ReadCStringFromMemory(str_ptr, 0x1000, error)
+    evaluate(disp_expr.format(str_ptr))
+    return read_string
 
 def is_instance_of(addr, typeinfo):
     return evaluate("(bool)IsInstance({}, {})".format(addr, typeinfo)).GetValue() == "true"
@@ -76,14 +81,6 @@ def check_type_info(value):
     result = evaluate(expr)
     return result.IsValid() and result.GetValue() == "true"
 
-
-#
-# Some kind of forward declaration.
-
-
-__FACTORY = {}
-
-
 def kotlin_object_type_summary(lldb_val, internal_dict):
     """Hook that is run by lldb to display a Kotlin object."""
     fallback = lldb_val.GetValue()
@@ -99,22 +96,27 @@ def kotlin_object_type_summary(lldb_val, internal_dict):
 
     return select_provider(lldb_val).to_string()
 
+def _child_type_global(ptr, index):
+    return evaluate("(int)Konan_DebugGetFieldType({}, {})".format(ptr, index)).GetValueAsUnsigned()
 
-def select_provider(lldb_val):
-    return __FACTORY['string'](lldb_val) if is_string(lldb_val) else __FACTORY['array'](lldb_val) if is_array(
-        lldb_val) else __FACTORY['object'](lldb_val)
+def _children_type_address_global(ptr, index):
+    return long(evaluate("(void *)Konan_DebugGetFieldAddress({}, {})".format(ptr, index)).GetValue(), 0)
+
+def system_count_children_global(ptr):
+    return int(evaluate("(int)Konan_DebugGetFieldCount({})".format(ptr)).GetValue())
 
 class KonanHelperProvider(lldb.SBSyntheticValueProvider):
 
     def __init__(self, valobj):
         self._valobj = valobj
+        # Can probably be in a global
         self._process = lldb.debugger.GetSelectedTarget().GetProcess()
         self._ptr = lldb_val_to_ptr(self._valobj)
         self._children_type_info = []
         self._childvalues = [None for x in range(self.num_children())]
 
     def system_count_children(self):
-        return int(evaluate("(int)Konan_DebugGetFieldCount({})".format(self._ptr)).GetValue())
+        return system_count_children_global(self._ptr)
 
     def _type_generator(self, index):
         if index == 0:
@@ -167,19 +169,16 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
             return None
 
     def _child_type(self, index):
-        return evaluate("(int)Konan_DebugGetFieldType({}, {})".format(self._ptr, index)).GetValueAsUnsigned()
+        return _child_type_global(self._ptr, index)
 
     def _children_type_address(self, index):
-        return long(evaluate("(void *)Konan_DebugGetFieldAddress({}, {})".format(self._ptr, index)).GetValue(), 0)
+        return _children_type_address_global(self._ptr, index)
 
     def _read_string(self, expr, error):
         return self._process.ReadCStringFromMemory(long(evaluate(expr).GetValue(), 0), 0x1000, error)
 
     def _read_string_dispose(self, expr, disp_expr, error):
-        str_ptr = long(evaluate(expr).GetValue(), 0)
-        read_string = self._process.ReadCStringFromMemory(str_ptr, 0x1000, error)
-        evaluate(disp_expr.format(str_ptr))
-        return read_string
+        return _read_string_dispose_global(self._process, expr, disp_expr, error)
 
     def _read_value(self, index):
         result = self._childvalues[index]
@@ -188,7 +187,7 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
                 return None
             type_info = self._children_type_info[index]
             value_type = type_info.type
-            address = type_info.address
+            address = _children_type_address_global(self._ptr, index)
             result = self._type_convesion_lamb(int(value_type))(address, str(type_info.name))
             self._childvalues[index] = result
         return result
@@ -265,37 +264,25 @@ TYPES_CACHE = {}
 class KonanObjectSyntheticProvider(KonanHelperProvider):
     def __init__(self, valobj):
         super(KonanObjectSyntheticProvider, self).__init__(valobj)
+        self._children_type_info = self._child_types(type_info_ptr(valobj), self._ptr)
+
+    def _child_types(self, tip, ptr):
         error = lldb.SBError()
-        tip = type_info_ptr(valobj)
-        classNameSummary = str("")
-
-        if tip != -1:
-            cnError = lldb.SBError()
-            classNameSummary = str(self._read_string_dispose("(const char *)XcodeKotlin_className({})".format(tip), "XcodeKotlin_disposeString({})", cnError))
-            if not cnError.Success():
-                classNameSummary = "(classname error)"
-
-        self._class_name_summary = classNameSummary
-
-        # if "AtomicReference" in self._class_name_summary:
-        #     print "AtomicReference yeah"
-        # el
         if tip != -1 and tip in TYPES_CACHE:
-            # print "cached "+ str(tip)
-            self._children_type_info = TYPES_CACHE[tip]
+            return TYPES_CACHE[tip]
         else:
-            # print "Pointer: "+ str(tip)
-            # print "Typename: "+ self._read_string("CreateCStringFromString(((TypeInfo*){})->relativeName_)".format(tip), error)
-            kid_count = self.system_count_children()
-            self._children_type_info = \
-            [ChildMetaInfo(
-                self._read_string("(const char *)Konan_DebugGetFieldName({}, (int){})".format(self._ptr, x), error), self._child_type(x), self._children_type_address(x)) for x in range(kid_count)]
+            kid_count = system_count_children_global(ptr)
+            children_type_info = \
+                [ChildMetaInfo(
+                    self._read_string("(const char *)Konan_DebugGetFieldName({}, (int){})".format(ptr, x), error), _child_type_global(ptr, x)) for x in range(kid_count)]
 
             if tip != -1:
-                TYPES_CACHE[tip] = self._children_type_info
+                TYPES_CACHE[tip] = children_type_info
 
-        if not error.Success():
-            raise DebuggerException()
+            if not error.Success():
+                raise DebuggerException()
+
+            return children_type_info
 
     def num_children(self):
         return self.system_count_children()
@@ -314,13 +301,12 @@ class KonanObjectSyntheticProvider(KonanHelperProvider):
         return self._read_value(index)
 
     def to_string(self):
-        return self._class_name_summary
+        return ""
 
 class ChildMetaInfo:
-    def __init__(self, name, type, address):
+    def __init__(self, name, type):
         self.name = name
         self.type = type
-        self.address = address
 
 #Cap array results to prevent super slow response
 MAX_VALUES = 20
@@ -331,7 +317,7 @@ class KonanArraySyntheticProvider(KonanHelperProvider):
         if self._ptr is None:
             return
         valobj.SetSyntheticChildrenGenerated(True)
-        self._children_type_info = [ChildMetaInfo(x, self._child_type(x), self._children_type_address(x)) for x in range(self.num_children())]
+        self._children_type_info = [ChildMetaInfo(x, self._child_type(x)) for x in range(self.num_children())]
         # self._children = [x for x in range(self.num_children())]
 
     def num_children(self):
@@ -365,10 +351,51 @@ def print_this_command(debugger, command, result, internal_dict):
     pthis = lldb.frame.FindVariable('<this>')
     print(pthis)
 
+def select_provider(lldb_val):
+    if is_string(lldb_val):
+        return KonanStringSyntheticProvider(lldb_val)
+    elif is_array(lldb_val):
+        return KonanArraySyntheticProvider(lldb_val)
+    else:
+        tip = type_info_ptr(lldb_val)
+        cnError = lldb.SBError()
+        classNameSummary = str(_read_string_dispose_global(lldb.debugger.GetSelectedTarget().GetProcess(), "(const char *)XcodeKotlin_className({})".format(tip), "XcodeKotlin_disposeString({})", cnError))
+
+        ctfIndex = len(CUSTOM_TYPE_FACTORY) - 1
+
+        while ctfIndex >= 0:
+            ctf = CUSTOM_TYPE_FACTORY[ctfIndex]
+            if ctf.matcher(classNameSummary):
+                return ctf.factory(lldb_val)
+            ctfIndex = ctfIndex - 1
+
+CUSTOM_TYPE_FACTORY = []
+
+class CustomTypeFactory:
+    def __init__(self, matcher, factory):
+        self.matcher = matcher
+        self.factory = factory
+
+class KonanAtomicReferenceSyntheticProvider(KonanObjectSyntheticProvider):
+    def __init__(self, valobj):
+        super(KonanAtomicReferenceSyntheticProvider, self).__init__(valobj)
+        print "Making atref 222"
+
+def _make_atomic_ref(lldb_val):
+    return KonanAtomicReferenceSyntheticProvider(lldb_val)
+
 def __lldb_init_module(debugger, _):
-    __FACTORY['object'] = lambda x: KonanObjectSyntheticProvider(x)
-    __FACTORY['array'] = lambda x: KonanArraySyntheticProvider(x)
-    __FACTORY['string'] = lambda x: KonanStringSyntheticProvider(x)
+    CUSTOM_TYPE_FACTORY.append(
+        CustomTypeFactory(
+            lambda className: True,
+            lambda x: KonanObjectSyntheticProvider(x)
+        ))
+
+    CUSTOM_TYPE_FACTORY.append(
+        CustomTypeFactory(
+            lambda className: className == "kotlin.native.concurrent.AtomicReference",
+            _make_atomic_ref
+        ))
     debugger.HandleCommand('\
         type summary add \
         --no-value \
