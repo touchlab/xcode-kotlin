@@ -56,6 +56,7 @@ def big_type_check(lldb_val):
     ptr_str = lldb_val_to_ptr(lldb_val)
     expr = "(long)((*(void **)((uintptr_t)(*(void**){}) & ~0x3) != **(void***)((uintptr_t)(*(void**){}) & ~0x3)) ? -3 : ((bool)IsInstance({}, {}) ? -1 : ((int)Konan_DebugIsArray({}) == 1 ? -2 : (uintptr_t)(*(void **)((uintptr_t)(*(void**){}) & ~0x3)))))"\
         .format(lldb_val.unsigned, lldb_val.unsigned, ptr_str, "theStringTypeInfo", ptr_str, lldb_val.unsigned)
+    print "big_type_check: "+ lldb_val.GetName() +" - "+ expr
     result = evaluate(expr)
     if result.IsValid():
         callResult = result.GetValue()
