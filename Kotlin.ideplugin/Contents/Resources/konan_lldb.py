@@ -38,8 +38,28 @@ def lldb_val_to_ptr(lldb_val):
 
 def evaluate(expr):
     result = lldb.debugger.GetSelectedTarget().EvaluateExpression(expr, lldb.SBExpressionOptions())
-    # print "evaluate '" + expr +"' - "+ str(result)
+    print "evaluate '" + expr +"' - "+ str(result)
     return result
+
+def is_instance_of(addr, typeinfo):
+    return evaluate("(bool)IsInstance({}, {})".format(addr, typeinfo)).GetValue() == "true"
+
+def is_string(value):
+    return is_instance_of(lldb_val_to_ptr(value), "theStringTypeInfo")
+
+def is_array(value):
+    return int(evaluate("(int)Konan_DebugIsArray({})".format(lldb_val_to_ptr(value))).GetValue()) == 1
+
+def check_type_info(value):
+    """This method checks self-referencing of pointer of first member of TypeInfo including case when object has an
+    meta-object pointed by TypeInfo. Two lower bits are reserved for memory management needs see runtime/src/main/cpp/Memory.h."""
+    if str(value.type) != "struct ObjHeader *":
+        return False
+    expr = "*(void **)((uintptr_t)(*(void**){0}) & ~0x3) == **(void***)((uintptr_t)(*(void**){0}) & ~0x3)".format(value.unsigned)
+    result = evaluate(expr)
+    return result.IsValid() and result.GetValue() == "true"
+
+
 
 def _read_string_dispose_global(process, expr, disp_expr, error):
     str_ptr = long(evaluate(expr).GetValue(), 0)
@@ -56,7 +76,7 @@ def big_type_check(lldb_val):
     ptr_str = lldb_val_to_ptr(lldb_val)
     expr = "(long)((*(void **)((uintptr_t)(*(void**){}) & ~0x3) != **(void***)((uintptr_t)(*(void**){}) & ~0x3)) ? -3 : ((bool)IsInstance({}, {}) ? -1 : ((int)Konan_DebugIsArray({}) == 1 ? -2 : (uintptr_t)(*(void **)((uintptr_t)(*(void**){}) & ~0x3)))))"\
         .format(lldb_val.unsigned, lldb_val.unsigned, ptr_str, "theStringTypeInfo", ptr_str, lldb_val.unsigned)
-    print "big_type_check: "+ lldb_val.GetName() +" - "+ expr
+    # print "big_type_check: "+ lldb_val.GetName() +" - "+ expr
     result = evaluate(expr)
     if result.IsValid():
         callResult = result.GetValue()
@@ -69,27 +89,19 @@ def big_type_check(lldb_val):
         return NO_TYPE_KNOWN
 
 def kotlin_object_type_summary(lldb_val, internal_dict):
-    # print "*** "+ lldb_val.GetName() +" ***"
-    # print_lldb_sbval(lldb_val)
-
     """Hook that is run by lldb to display a Kotlin object."""
     fallback = lldb_val.GetValue()
     if str(lldb_val.type) != "struct ObjHeader *":
-        print ">>> not expected struct"
         return fallback
-    else:
-        print ">>> expected struct"
 
-    if lldb_val.unsigned == 0:
-        print ">>> summay null"
+    if not check_type_info(lldb_val):
         return NULL
 
     ptr = lldb_val_to_ptr(lldb_val)
     if ptr is None:
-        print ">>> ptr is null"
         return fallback
 
-    return select_provider(lldb_val).to_string()
+    return select_provider(lldb_val, "kotlin_object_type_summary").to_string()
 
 def print_lldb_sbval(lldb_val):
     print "GetName: "+ str(lldb_val.GetName()) +", "+\
@@ -415,12 +427,11 @@ NO_TYPE_KNOWN = -3
 
 class KonanProxyTypeProvider:
     def __init__(self, valobj, _):
-        if valobj.unsigned == 0:
+        if not check_type_info(valobj):
             return
 
-        provider = select_provider(valobj)
-        # if provider is not None:
-        self._proxy = provider
+        self._proxy = select_provider(valobj, "KonanProxyTypeProvider")
+        self.update()
 
         self.update()
 
@@ -431,21 +442,24 @@ def print_this_command(debugger, command, result, internal_dict):
     pthis = lldb.frame.FindVariable('<this>')
     print(pthis)
 
-def select_provider(lldb_val):
-    if lldb_val.unsigned == 0:
-        print "provider null: "+ str(lldb_val)
-        return KonanNullSyntheticProvider(lldb_val)
-
-    type_info_result = big_type_check(lldb_val)
-    if type_info_result == STRING_TYPE:#String
-        return KonanStringSyntheticProvider(lldb_val)
-    elif type_info_result == ARRAY_TYPE:#Array
-        return KonanArraySyntheticProvider(lldb_val)
-    elif type_info_result == NO_TYPE_KNOWN:#None
-        return KonanNullSyntheticProvider(lldb_val)
-    else:
-        tip = type_info_result
-        return KonanObjectSyntheticProvider(lldb_val, tip)
+def select_provider(lldb_val, source):
+    print "select_provider-"+ source +": "+ lldb_val.GetName()
+    return KonanStringSyntheticProvider(lldb_val) if is_string(lldb_val) else KonanArraySyntheticProvider(lldb_val) if is_array(
+        lldb_val) else KonanObjectSyntheticProvider(lldb_val, -1)
+    # if lldb_val.unsigned == 0:
+    #     print "provider null: "+ str(lldb_val)
+    #     return KonanNullSyntheticProvider(lldb_val)
+    #
+    # type_info_result = big_type_check(lldb_val)
+    # if type_info_result == STRING_TYPE:#String
+    #     return KonanStringSyntheticProvider(lldb_val)
+    # elif type_info_result == ARRAY_TYPE:#Array
+    #     return KonanArraySyntheticProvider(lldb_val)
+    # elif type_info_result == NO_TYPE_KNOWN:#None
+    #     return KonanNullSyntheticProvider(lldb_val)
+    # else:
+    #     tip = type_info_result
+    #     return KonanObjectSyntheticProvider(lldb_val, tip)
         # cnError = lldb.SBError()
         # classNameSummary = str(_read_string_dispose_global(lldb.debugger.GetSelectedTarget().GetProcess(), "(const char *)XcodeKotlin_className({})".format(tip), "XcodeKotlin_disposeString({})", cnError))
         #
