@@ -6,6 +6,10 @@ set breakpoints and includes llvm support to view data in the debug window.
 
 ## Installation
 
+### Watch Video
+
+[![Kotlin Xcode Setup](https://img.youtube.com/vi/CqzSyWI_esY/0.jpg)](https://www.youtube.com/watch?v=CqzSyWI_esY)
+
 ### Setup script
 
 Run the following command in your terminal:
@@ -41,12 +45,6 @@ command script import ~/Library/Developer/Xcode/Plug-ins/Kotlin.ideplugin/Conten
 
 If properly set up, you should be able to add Kotlin source to Xcode, set up breakpoints, and step through code.
 Be careful not to have Kotlin source added to the iOS Bundle output.
-
-### Adding Kotlin Source
-
-Watch screencast
-
-[![Kotlin Xcode Setup](https://img.youtube.com/vi/CqzSyWI_esY/0.jpg)](https://www.youtube.com/watch?v=CqzSyWI_esY)
 
 ### Sources
 
