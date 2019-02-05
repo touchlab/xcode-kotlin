@@ -31,7 +31,6 @@ import struct
 
 NULL = 'null'
 
-
 def lldb_val_to_ptr(lldb_val):
     addr = lldb_val.GetValueAsUnsigned()
     return '((struct ObjHeader *) {:#x})'.format(addr)
@@ -49,7 +48,7 @@ def check_extended_debug():
     global _extended_debug_enabled
     if not _has_checked_debug:
         _has_checked_debug = True
-        expr = "(bool)XcodeKotlin_isActiv()"
+        expr = "(bool)XcodeKotlin_isActive()"
         result = evaluate(expr)
         _extended_debug_enabled = result.IsValid() and result.GetValue() == "true"
     return _extended_debug_enabled
@@ -64,6 +63,15 @@ def extended_classname(tip):
     else:
         return None
 
+_debug_string_buffer = 0
+
+def debug_string_buffer_ptr():
+    global _debug_string_buffer
+    if _debug_string_buffer == 0:
+        _debug_string_buffer = long(evaluate("(char *)Konan_DebugBuffer()").unsigned)
+
+    return _debug_string_buffer
+
 def _read_string_dispose_global(process, expr, disp_expr, error):
     str_ptr = long(evaluate(expr).GetValue(), 0)
     read_string = process.ReadCStringFromMemory(str_ptr, 0x1000, error)
@@ -72,15 +80,17 @@ def _read_string_dispose_global(process, expr, disp_expr, error):
 
 
 def super_big_type_check(lldb_val):
-    if str(lldb_val.type) != "struct ObjHeader *" or lldb_val.unsigned == 0:
+    if str(lldb_val.type) != "struct ObjHeader *" or lldb_val.unsigned == 0 or lldb_val.GetName().startswith("&"):
         return NO_TYPE_KNOWN
 
     ptr_str = lldb_val_to_ptr(lldb_val)
     expr_check = "(*(void **)((uintptr_t)(*(void**){0}) & ~0x3) != **(void***)((uintptr_t)(*(void**){0}) & ~0x3) ? -3 : (".format(lldb_val.unsigned)
-    expr = "(long)((bool)IsInstance({}, {}) ? -1 : ((int)Konan_DebugIsArray({}) == 1 ? -2 : (uintptr_t)(*(void **)((uintptr_t)(*(void**){}) & ~0x3))))" \
-        .format(ptr_str, "theStringTypeInfo", ptr_str, lldb_val.unsigned)
+    expr_string_copy = "(int)Konan_DebugObjectToUtf8Array({}, (char *)Konan_DebugBuffer(), (int)Konan_DebugBufferSize())".format(ptr_str)
+    expr = "(long)((bool)IsInstance({}, {}) ? -({} + {}) : ((int)Konan_DebugIsArray({}) == 1 ? -2 : (uintptr_t)(*(void **)((uintptr_t)(*(void**){}) & ~0x3))))" \
+        .format(ptr_str, "theStringTypeInfo", expr_string_copy, STRING_SIZE_OFFSET, ptr_str, lldb_val.unsigned)
 
     full_statement = expr_check + expr + "))"
+
     result = evaluate(full_statement)
     if result.IsValid():
         callResult = result.GetValue()
@@ -228,27 +238,20 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
         return value
 
 class KonanStringSyntheticProvider:
-    def __init__(self, valobj):
-        ptr = lldb_val_to_ptr(valobj)
-        fallback = valobj.GetValue()
-        buff_len = evaluate(
-            '(int)Konan_DebugObjectToUtf8Array({}, (char *)Konan_DebugBuffer(), (int)Konan_DebugBufferSize());'.format(
-                ptr)
-        ).unsigned
+    def __init__(self, valobj, type_check_result):
+        buff_len = (type_check_result*-1) - STRING_SIZE_OFFSET
 
         if not buff_len:
-            self._representation = fallback
+            self._representation = valobj.GetValue()
             return
 
         process = lldb.debugger.GetSelectedTarget().GetProcess()
 
-        buff_addr = evaluate("(char *)Konan_DebugBuffer()").unsigned
-
         error = lldb.SBError()
-        s = process.ReadCStringFromMemory(long(buff_addr), int(buff_len), error)
+        s = process.ReadCStringFromMemory(debug_string_buffer_ptr(), int(buff_len), error)
         if not error.Success():
             raise DebuggerException()
-        self._representation = s if error.Success() else fallback
+        self._representation = s if error.Success() else valobj.GetValue()
         self._logger = lldb.formatters.Logger.Logger()
 
     def update(self):
@@ -354,7 +357,6 @@ class KonanArraySyntheticProvider(KonanHelperProvider):
             result_list.append(ChildMetaInfo(x, array_type, entry_offset + (x * array_type_size)))
 
         return result_list
-        # return [ChildMetaInfo(x, self._child_type(x), self._calc_offset(self._children_type_address(x))) for x in range(child_count)]
 
     def get_child_index(self, name):
         index = int(name)
@@ -366,6 +368,7 @@ class KonanArraySyntheticProvider(KonanHelperProvider):
 STRING_TYPE = -1
 ARRAY_TYPE = -2
 NO_TYPE_KNOWN = -3
+STRING_SIZE_OFFSET = 10
 
 class KonanProxyTypeProvider:
     def __init__(self, valobj, _):
@@ -387,46 +390,9 @@ def print_this_command(debugger, command, result, internal_dict):
     print(pthis)
 
 def select_provider(lldb_val, type_check_result):
-    return KonanStringSyntheticProvider(lldb_val) if type_check_result == STRING_TYPE else KonanArraySyntheticProvider(lldb_val) if type_check_result == ARRAY_TYPE else KonanObjectSyntheticProvider(lldb_val, type_check_result)
-
-        # cnError = lldb.SBError()
-        # classNameSummary = str(_read_string_dispose_global(lldb.debugger.GetSelectedTarget().GetProcess(), "(const char *)XcodeKotlin_className({})".format(tip), "XcodeKotlin_disposeString({})", cnError))
-        #
-        # ctfIndex = len(CUSTOM_TYPE_FACTORY) - 1
-        #
-        # while ctfIndex >= 0:
-        #     ctf = CUSTOM_TYPE_FACTORY[ctfIndex]
-        #     if ctf.matcher(classNameSummary):
-        #         return ctf.factory(lldb_val)
-        #     ctfIndex = ctfIndex - 1
-
-CUSTOM_TYPE_FACTORY = []
-
-class CustomTypeFactory:
-    def __init__(self, matcher, factory):
-        self.matcher = matcher
-        self.factory = factory
-
-class KonanAtomicReferenceSyntheticProvider(KonanObjectSyntheticProvider):
-    def __init__(self, valobj):
-        super(KonanAtomicReferenceSyntheticProvider, self).__init__(valobj)
-        print "Making atref 222"
-
-def _make_atomic_ref(lldb_val):
-    return KonanAtomicReferenceSyntheticProvider(lldb_val)
+    return KonanStringSyntheticProvider(lldb_val, type_check_result) if type_check_result <= (-STRING_SIZE_OFFSET) else KonanArraySyntheticProvider(lldb_val) if type_check_result == ARRAY_TYPE else KonanObjectSyntheticProvider(lldb_val, type_check_result)
 
 def __lldb_init_module(debugger, _):
-    CUSTOM_TYPE_FACTORY.append(
-        CustomTypeFactory(
-            lambda className: True,
-            lambda x: KonanObjectSyntheticProvider(x)
-        ))
-
-    CUSTOM_TYPE_FACTORY.append(
-        CustomTypeFactory(
-            lambda className: className == "kotlin.native.concurrent.AtomicReference",
-            _make_atomic_ref
-        ))
     debugger.HandleCommand('\
         type summary add \
         --no-value \
@@ -435,6 +401,7 @@ def __lldb_init_module(debugger, _):
         "struct ObjHeader *" \
         --category Kotlin\
     ')
+
     debugger.HandleCommand('\
         type synthetic add \
         --python-class konan_lldb.KonanProxyTypeProvider\
