@@ -46,7 +46,7 @@ Be careful not to have Kotlin source added to the iOS Bundle output.
 
 Watch screencast
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/CqzSyWI_esY" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[![Kotlin Xcode Setup](https://img.youtube.com/vi/CqzSyWI_esY/0.jpg)](https://www.youtube.com/watch?v=CqzSyWI_esY)
 
 ### Sources
 
