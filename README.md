@@ -29,7 +29,7 @@ Please note that if you are running Xcode 8 the `Plug-ins` and `Specifications` 
 	cp Kotlin.xclangspec ~/Library/Developer/Xcode/Specifications/
 	```
 
-lldb formatting support is provided by kotlin_lldb.py. The setup script will add
+lldb formatting support is provided by konan_lldb.py. The setup script will add
 the path to `~/.lldbinit`. You can manually load this script at the lldb prompt
 with
 
@@ -41,6 +41,12 @@ command script import ~/Library/Developer/Xcode/Plug-ins/Kotlin.ideplugin/Conten
 
 If properly set up, you should be able to add Kotlin source to Xcode, set up breakpoints, and step through code.
 Be careful not to have Kotlin source added to the iOS Bundle output.
+
+### Adding Kotlin Source
+
+Watch screencast
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/CqzSyWI_esY" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ### Sources
 
