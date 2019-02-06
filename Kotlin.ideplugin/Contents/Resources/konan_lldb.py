@@ -53,18 +53,27 @@ def check_extended_debug():
         _extended_debug_enabled = result.IsValid() and result.GetValue() == "true"
     return _extended_debug_enabled
 
+TYPES_CLASSNAME = {}
+
 def extended_classname(tip):
-    if check_extended_debug() and tip > 0:
-        error = lldb.SBError()
-        str_ptr = long(evaluate("(const char *)XcodeKotlin_className({})".format(tip)).GetValue(), 0)
-        read_string = lldb.debugger.GetSelectedTarget().GetProcess().ReadCStringFromMemory(str_ptr, 0x1000, error)
-
-        if not error.Success():
-            raise DebuggerException()
-
-        return read_string
-    else:
+    if tip <= 0:
         return None
+    elif tip in TYPES_CLASSNAME:
+        return TYPES_CLASSNAME[tip]
+    else:
+        if check_extended_debug():
+            error = lldb.SBError()
+            str_ptr = long(evaluate("(const char *)XcodeKotlin_className({})".format(tip)).GetValue(), 0)
+            read_string = lldb.debugger.GetSelectedTarget().GetProcess().ReadCStringFromMemory(str_ptr, 0x1000, error)
+
+            if not error.Success():
+                raise DebuggerException()
+
+            TYPES_CLASSNAME[tip] = read_string
+            return read_string
+        else:
+            TYPES_CLASSNAME[tip] = None
+            return None
 
 _debug_string_buffer = 0
 
@@ -75,8 +84,16 @@ def debug_string_buffer_ptr():
 
     return _debug_string_buffer
 
+# This method performs multiple checks in a single statement to reduce the number of calls through lldb to the underlying
+# process. First we check that the typeinfo pointer indicates we're not a meta class. Then we check if this is a string, and
+# if so, copy the string to the debug buffer and return the length. That is encoded by adding 10 and negating. So, if the
+# result is -13, that's a string of length 3. -26, 16. Etc. If not, check if array. If so , return -2. If not that, we assume
+# a standard K/N object, and return the typeinfo pointer. TypeInfo definitions are cached by pointer, which greatly reduces
+# lldb process call volume.
+
 def super_big_type_check(lldb_val):
     if str(lldb_val.type) != "struct ObjHeader *" or lldb_val.unsigned == 0 or lldb_val.GetName().startswith("&"):
+        print str(lldb_val.type)
         return NO_TYPE_KNOWN
 
     ptr_str = lldb_val_to_ptr(lldb_val)
@@ -116,6 +133,26 @@ def kotlin_object_type_summary(lldb_val, internal_dict):
 
 def _child_type_global(ptr, index):
     return evaluate("(int)Konan_DebugGetFieldType({}, {})".format(ptr, index)).GetValueAsUnsigned()
+
+TYPE_CONVERSIONS = [
+    lambda address, name, provider: provider._valobj.CreateValueFromExpression(name, "(void *){:#x}".format(address)),
+    lambda address, name, provider: provider._create_synthetic_child(name),
+    lambda address, name, provider: provider._valobj.CreateValueFromExpression(name, "(int8_t *){:#x}".format(address)),
+    lambda address, name, provider: provider._valobj.CreateValueFromExpression(name, "(int16_t *){:#x}".format(address)),
+    lambda address, name, provider: provider._valobj.CreateValueFromExpression(name, "(int32_t *){:#x}".format(address)),
+    lambda address, name, provider: provider._valobj.CreateValueFromExpression(name, "(int64_t *){:#x}".format(address)),
+    lambda address, name, provider: provider._valobj.CreateValueFromExpression(name, "(float *){:#x}".format(address)),
+    lambda address, name, provider: provider._valobj.CreateValueFromExpression(name, "(double *){:#x}".format(address)),
+    lambda address, name, provider: provider._valobj.CreateValueFromExpression(name, "(void **){:#x}".format(address)),
+    lambda address, name, provider: provider._valobj.CreateValueFromExpression(name, "(bool *){:#x}".format(address)),
+    lambda address, name, provider: None
+]
+
+def _type_conversion(index, address, name, provider):
+    if len(TYPE_CONVERSIONS) > index:
+        return TYPE_CONVERSIONS[index](address, name, provider)
+    else:
+        return None
 
 class KonanHelperProvider(lldb.SBSyntheticValueProvider):
 
@@ -173,32 +210,6 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
         else:
             return None
 
-    def _type_convesion_lamb(self, index):
-        if index == 0:
-            return lambda address, name: self._valobj.CreateValueFromExpression(name, "(void *){:#x}".format(address))
-        elif index == 1:
-            return lambda address, name: self._create_synthetic_child(name)
-        elif index == 2:
-            return lambda address, name: self._valobj.CreateValueFromExpression(name, "(int8_t *){:#x}".format(address))
-        elif index == 3:
-            return lambda address, name: self._valobj.CreateValueFromExpression(name, "(int16_t *){:#x}".format(address))
-        elif index == 4:
-            return lambda address, name: self._valobj.CreateValueFromExpression(name, "(int32_t *){:#x}".format(address))
-        elif index == 5:
-            return lambda address, name: self._valobj.CreateValueFromExpression(name, "(int64_t *){:#x}".format(address))
-        elif index == 6:
-            return lambda address, name: self._valobj.CreateValueFromExpression(name, "(float *){:#x}".format(address))
-        elif index == 7:
-            return lambda address, name: self._valobj.CreateValueFromExpression(name, "(double *){:#x}".format(address))
-        elif index == 8:
-            return lambda address, name: self._valobj.CreateValueFromExpression(name, "(void **){:#x}".format(address))
-        elif index == 9:
-            return lambda address, name: self._valobj.CreateValueFromExpression(name, "(bool *){:#x}".format(address))
-        elif index == 10:
-            return lambda address, name: None
-        else:
-            return None
-
     def _child_type(self, index):
         return _child_type_global(self._ptr, index)
 
@@ -216,16 +227,20 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
             type_info = self._children_type_info[index]
             value_type = type_info.type
             address = self._base_address + type_info.offset
-            result = self._type_convesion_lamb(int(value_type))(address, str(type_info.name))
+            result = _type_conversion(int(value_type), address, str(type_info.name), self)
             self._childvalues[index] = result
         return result
 
     def _create_synthetic_child(self, name):
         index = self.get_child_index(name)
         type_info = self._child_info(index)
+        if str(name) == "allNames":
+            print "allNames: "+ str(type_info.type) +"/"+ str(type_info.offset)
+
         value = self._valobj.CreateChildAtOffset(str(name),
                                                  type_info.offset,
                                                  self._type_generator(type_info.type))
+
         value.SetSyntheticChildrenGenerated(True)
         value.SetPreferSyntheticValue(True)
         return value
@@ -407,6 +422,7 @@ def __lldb_init_module(debugger, _):
 
 def print_lldb_sbval(lldb_val):
     print "GetName: "+ str(lldb_val.GetName()) +", "+ \
+          "GetData: "+ str(lldb_val.GetData()) +", "+ \
           "IsValid: "+ str(lldb_val.IsValid()) +", "+ \
           "GetError: "+ str(lldb_val.GetError()) +", "+ \
           "GetID: "+ str(lldb_val.GetID()) +", "+ \
