@@ -55,11 +55,14 @@ def check_extended_debug():
 
 def extended_classname(tip):
     if check_extended_debug() and tip > 0:
-        cnError = lldb.SBError()
-        classname = str(_read_string_dispose_global(lldb.debugger.GetSelectedTarget().GetProcess(),
-                                               "(const char *)XcodeKotlin_className({})".format(tip),
-                                               "XcodeKotlin_disposeString({})", cnError))
-        return classname
+        error = lldb.SBError()
+        str_ptr = long(evaluate("(const char *)XcodeKotlin_className({})".format(tip)).GetValue(), 0)
+        read_string = lldb.debugger.GetSelectedTarget().GetProcess().ReadCStringFromMemory(str_ptr, 0x1000, error)
+
+        if not error.Success():
+            raise DebuggerException()
+
+        return read_string
     else:
         return None
 
@@ -71,13 +74,6 @@ def debug_string_buffer_ptr():
         _debug_string_buffer = long(evaluate("(char *)Konan_DebugBuffer()").unsigned)
 
     return _debug_string_buffer
-
-def _read_string_dispose_global(process, expr, disp_expr, error):
-    str_ptr = long(evaluate(expr).GetValue(), 0)
-    read_string = process.ReadCStringFromMemory(str_ptr, 0x1000, error)
-    evaluate(disp_expr.format(str_ptr))
-    return read_string
-
 
 def super_big_type_check(lldb_val):
     if str(lldb_val.type) != "struct ObjHeader *" or lldb_val.unsigned == 0 or lldb_val.GetName().startswith("&"):
@@ -211,9 +207,6 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
 
     def _read_string(self, expr, error):
         return self._process.ReadCStringFromMemory(long(evaluate(expr).GetValue(), 0), 0x1000, error)
-
-    def _read_string_dispose(self, expr, disp_expr, error):
-        return _read_string_dispose_global(self._process, expr, disp_expr, error)
 
     def _read_value(self, index):
         result = self._childvalues[index]
