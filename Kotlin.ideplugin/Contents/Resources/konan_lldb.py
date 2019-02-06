@@ -93,7 +93,7 @@ def debug_string_buffer_ptr():
 
 def super_big_type_check(lldb_val):
     if str(lldb_val.type) != "struct ObjHeader *" or lldb_val.unsigned == 0 or lldb_val.GetName().startswith("&"):
-        print str(lldb_val.type)
+        # print str(lldb_val.type)
         return NO_TYPE_KNOWN
 
     ptr_str = lldb_val_to_ptr(lldb_val)
@@ -234,8 +234,8 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
     def _create_synthetic_child(self, name):
         index = self.get_child_index(name)
         type_info = self._child_info(index)
-        if str(name) == "allNames":
-            print "allNames: "+ str(type_info.type) +"/"+ str(type_info.offset)
+        # if str(name) == "allNames":
+        #     print "allNames: "+ str(type_info.type) +"/"+ str(type_info.offset)
 
         value = self._valobj.CreateChildAtOffset(str(name),
                                                  type_info.offset,
