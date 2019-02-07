@@ -67,7 +67,8 @@ def extended_classname(tip):
             read_string = lldb.debugger.GetSelectedTarget().GetProcess().ReadCStringFromMemory(str_ptr, 0x1000, error)
 
             if not error.Success():
-                raise DebuggerException()
+                # raise DebuggerException()
+                return None
 
             TYPES_CLASSNAME[tip] = read_string
             return read_string
@@ -234,15 +235,13 @@ class KonanHelperProvider(lldb.SBSyntheticValueProvider):
     def _create_synthetic_child(self, name):
         index = self.get_child_index(name)
         type_info = self._child_info(index)
-        # if str(name) == "allNames":
-        #     print "allNames: "+ str(type_info.type) +"/"+ str(type_info.offset)
-
         value = self._valobj.CreateChildAtOffset(str(name),
                                                  type_info.offset,
                                                  self._type_generator(type_info.type))
 
         value.SetSyntheticChildrenGenerated(True)
         value.SetPreferSyntheticValue(True)
+
         return value
 
 class KonanStringSyntheticProvider:
@@ -254,7 +253,6 @@ class KonanStringSyntheticProvider:
             return
 
         process = lldb.debugger.GetSelectedTarget().GetProcess()
-
         error = lldb.SBError()
         s = process.ReadCStringFromMemory(debug_string_buffer_ptr(), int(buff_len), error)
         if not error.Success():
@@ -327,7 +325,7 @@ class ChildMetaInfo:
         self.type = type
         self.offset = offset
 
-#Cap array results to prevent super slow response
+#Cap array results to prevent slow response with large lists
 MAX_VALUES = 20
 
 class KonanArraySyntheticProvider(KonanHelperProvider):
@@ -373,7 +371,6 @@ class KonanArraySyntheticProvider(KonanHelperProvider):
     def to_string(self):
         return [self.system_count_children()]
 
-STRING_TYPE = -1
 ARRAY_TYPE = -2
 NO_TYPE_KNOWN = -3
 STRING_SIZE_OFFSET = 10
@@ -419,21 +416,3 @@ def __lldb_init_module(debugger, _):
 
     debugger.HandleCommand('type category enable Kotlin')
     debugger.HandleCommand('command script add -f {}.print_this_command print_this'.format(__name__))
-
-def print_lldb_sbval(lldb_val):
-    print "GetName: "+ str(lldb_val.GetName()) +", "+ \
-          "GetData: "+ str(lldb_val.GetData()) +", "+ \
-          "IsValid: "+ str(lldb_val.IsValid()) +", "+ \
-          "GetError: "+ str(lldb_val.GetError()) +", "+ \
-          "GetID: "+ str(lldb_val.GetID()) +", "+ \
-          "GetTypeName: "+ str(lldb_val.GetTypeName()) +", "+ \
-          "GetDisplayTypeName: "+ str(lldb_val.GetDisplayTypeName()) +", "+ \
-          "GetByteSize: "+ str(lldb_val.GetByteSize()) +", "+ \
-          "IsInScope: "+ str(lldb_val.IsInScope()) +", "+ \
-          "GetFormat: "+ str(lldb_val.GetFormat()) +", "+ \
-          "GetValue: "+ str(lldb_val.GetValue()) +", "+ \
-          "GetValueAsSigned: "+ str(lldb_val.GetValueAsSigned()) +", "+ \
-          "GetValueAsUnsigned: "+ str(lldb_val.GetValueAsUnsigned()) +", "+ \
-          "GetValueType: "+ str(lldb_val.GetValueType()) +", "+ \
-          "GetValueDidChange: "+ str(lldb_val.GetValueDidChange()) +", "+ \
-          "GetSummary: "+ str(lldb_val.GetSummary())
