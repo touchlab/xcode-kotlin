@@ -40,42 +40,6 @@ def evaluate(expr):
     # print "evaluate '" + expr +"' - "+ str(result)
     return result
 
-_has_checked_debug = False
-_extended_debug_enabled = False
-
-def check_extended_debug():
-    global _has_checked_debug
-    global _extended_debug_enabled
-    if not _has_checked_debug:
-        _has_checked_debug = True
-        expr = "(bool)XcodeKotlin_isActive()"
-        result = evaluate(expr)
-        _extended_debug_enabled = result.IsValid() and result.GetValue() == "true"
-    return _extended_debug_enabled
-
-TYPES_CLASSNAME = {}
-
-def extended_classname(tip):
-    if tip <= 0:
-        return None
-    elif tip in TYPES_CLASSNAME:
-        return TYPES_CLASSNAME[tip]
-    else:
-        if check_extended_debug():
-            error = lldb.SBError()
-            str_ptr = long(evaluate("(const char *)XcodeKotlin_className({})".format(tip)).GetValue(), 0)
-            read_string = lldb.debugger.GetSelectedTarget().GetProcess().ReadCStringFromMemory(str_ptr, 0x1000, error)
-
-            if not error.Success():
-                # raise DebuggerException()
-                return None
-
-            TYPES_CLASSNAME[tip] = read_string
-            return read_string
-        else:
-            TYPES_CLASSNAME[tip] = None
-            return None
-
 _debug_string_buffer = 0
 
 def debug_string_buffer_ptr():
@@ -287,7 +251,6 @@ class KonanObjectSyntheticProvider(KonanHelperProvider):
     def __init__(self, valobj, tip):
         self._tip = tip
         super(KonanObjectSyntheticProvider, self).__init__(valobj)
-        self._classname = extended_classname(tip)
 
     def _init_child_type_info(self):
         tip = self._tip
