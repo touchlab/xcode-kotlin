@@ -1,0 +1,74 @@
+KBoolean XcodeKotlin_isActive() {
+  return true;
+}
+
+char classNameBuffer[4096];
+
+char *XcodeKotlin_className(void *type_ptr) {
+  TypeInfo *typeInfo = (TypeInfo *) type_ptr;
+
+  if (typeInfo->relativeName_ == nullptr)
+    return nullptr;
+
+  if (typeInfo->packageName_ == nullptr) {
+    char *namePtr = CreateCStringFromString(typeInfo->relativeName_);
+    sprintf(classNameBuffer, "%s", namePtr);
+    DisposeCString(namePtr);
+    return classNameBuffer;
+  }
+
+  char* packagePtr = CreateCStringFromString(typeInfo->packageName_);
+  char* classNamePtr = CreateCStringFromString(typeInfo->relativeName_);
+
+  sprintf(classNameBuffer, "%s.%s", packagePtr, classNamePtr);
+
+  DisposeCString(packagePtr);
+  DisposeCString(classNamePtr);
+
+  return classNameBuffer;
+}
+
+void XcodeKotlin_disposeString(char* buf){
+  DisposeCString(buf);
+}
+
+int XcodeKotlin_arrayType(KRef obj){
+  return -obj->type_info()->extendedInfo_->fieldsCount_;
+}
+
+constexpr int runtimeTypeSize[] = {
+    -1,                  // INVALID
+    sizeof(ObjHeader*),  // OBJECT
+    1,                   // INT8
+    2,                   // INT16
+    4,                   // INT32
+    8,                   // INT64
+    4,                   // FLOAT32
+    8,                   // FLOAT64
+    sizeof(void*),       // NATIVE_PTR
+    1                    // BOOLEAN
+};
+
+constexpr int runtimeTypeAlignment[] = {
+    -1,                  // INVALID
+    alignof(ObjHeader*), // OBJECT
+    alignof(int8_t),     // INT8
+    alignof(int16_t),    // INT16
+    alignof(int32_t),    // INT32
+    alignof(int64_t),    // INT64
+    alignof(float),      // FLOAT32
+    alignof(double),     // FLOAT64
+    alignof(void*),      // NATIVE_PTR
+    1                    // BOOLEAN
+};
+
+void* XcodeKotlin_arrayBase(KRef obj){
+  int32_t typeIndex = XcodeKotlin_arrayType(obj);
+  return reinterpret_cast<uint8_t*>(obj->array())
+         + alignUp(sizeof(struct ArrayHeader), runtimeTypeAlignment[typeIndex]);
+}
+
+int XcodeKotlin_arrayTypeSize(KRef obj){
+  int32_t typeIndex = XcodeKotlin_arrayType(obj);
+  return runtimeTypeSize[typeIndex];
+}

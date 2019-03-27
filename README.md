@@ -46,6 +46,8 @@ command script import ~/Library/Developer/Xcode/Plug-ins/Kotlin.ideplugin/Conten
 If properly set up, you should be able to add Kotlin source to Xcode, set up breakpoints, and step through code.
 Be careful not to have Kotlin source added to the iOS Bundle output.
 
+To help automate adding Kotlin source, check out the [Kotlin Xcode Sync](https://github.com/touchlab/KotlinXcodeSync) Gradle plugin.
+
 ### Sources
 
 Setting up the Plugin has been an amalgam of various source projects, as Xcode "Plugins"
