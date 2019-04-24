@@ -50,6 +50,10 @@ Be careful not to have Kotlin source added to the iOS Bundle output.
 
 To help automate adding Kotlin source, check out the [Kotlin Xcode Sync](https://github.com/touchlab/KotlinXcodeSync) Gradle plugin.
 
+### Sample
+
+The [Droidcon NYC](https://github.com/touchlab/DroidconKotlin/) app has both the Xcode Gradle sync and Xcode projects enabled for debugging.
+
 ### Sources
 
 Setting up the Plugin has been an amalgam of various source projects, as Xcode "Plugins"
