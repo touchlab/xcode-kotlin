@@ -65,3 +65,26 @@ files shipped with Xcode. Xcode plugin file from [GraphQL](https://github.com/ap
 LLDB formatting originally comes from the Kotlin/Native project, source [konan_lldb.py](https://github.com/JetBrains/kotlin-native/blob/dbb162a4b523071f31913e888e212df344a1b61e/llvmDebugInfoC/src/scripts/konan_lldb.py), although the way data is grabbed has been heavily modified to better
 support an interactive debugger.
 
+## Coming Soon
+
+### LLDB Formatter
+
+The plugin itself relies on the lldb python formatter which was mostly adapted from the lldb formatter that comes with Kotlin Native. That script was really written for command line use. In an interactive context (like this plugin) the performance isn't great. Most of our changes are around optimizations. However, there are ongoing changes both to the underlying script and (possibly) to the memory layout of Kotlin Native itself at runtime.
+
+The script in this plugin could use a refresh with a more recent base version from Kotlin Native, and if possible, refactor the optimizations to be as close to "stock" as possible, to make future updates easier.
+
+The formatter also takes a very basic approach to data formatting. Lists are capped at 20 entries to avoid super long refreshes. Maps show their underlying data structures, but could get custom formatting (for example). There is a lot that could be done.
+
+We currently can't get some things like class name. This could be enabled with moderate additions to Kotlin Native debug facilities.
+
+### Debug aligning
+
+The breakpoints and runtime *usually* line up, but they can get weird. This is especially true around things like lambdas. This *may* be related to what the llvm compiler is writing, or it may simply be an artifact of how Xcode is setting breakpoints. We'll need reports and repros of code that confuses the debugger to see if that can be improved.
+
+### Color File
+
+The color definition is basically Java's with minor additions. This could be better adapted to Kotlin.
+
+### Install
+
+It's a bash script, which works, but does not take into account non-standard install directories and various other possible config options. This could be improved.
