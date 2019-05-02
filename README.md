@@ -42,7 +42,7 @@ the path to `~/.lldbinit`. You can manually load this script at the lldb prompt
 with
 
 ```
-command script import ~/Library/Developer/Xcode/Plug-ins/Kotlin.ideplugin/Contents/Resources/kotlin_lldb.py
+command script import ~/Library/Developer/Xcode/Plug-ins/Kotlin.ideplugin/Contents/Resources/konan_lldb.py
 ```
 
 ### Usage
