@@ -78,9 +78,6 @@ def check_type_info(value):
 def type_info(value):
     return evaluate("*(void **)((uintptr_t)(*(void**){0:#x}) & ~0x3)".format(value.unsigned)).unsigned
 
-#
-# Some kind of forward declaration.
-
 
 __FACTORY = {}
 
