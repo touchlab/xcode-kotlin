@@ -93,3 +93,14 @@ The color definition is basically Java's with minor additions. This could be bet
 ### Install
 
 It's a bash script, which works, but does not take into account non-standard install directories and various other possible config options. This could be improved.
+
+## Xcode Updates
+
+Every time Xcode is updated we need the UUID. It needs to be added to `Kotlin.ideplugin/Contents/Info.plist`. To find the 
+UUID of your version of Xcode, run the following:
+
+```
+defaults read /Applications/Xcode.app/Contents/Info DVTPlugInCompatibilityUUID
+```
+
+Info [from here](https://www.mokacoding.com/blog/xcode-plugins-update/)
