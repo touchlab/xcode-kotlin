@@ -4,6 +4,11 @@ Plugin to facilitate debugging iOS applications using Kotlin Native in Xcode.
 Defines Kotlin files as source code, with basic highlighting. Allows you to
 set breakpoints and includes llvm support to view data in the debug window.
 
+> ## **We're Hiring!**
+>
+> Touchlab is looking for Android-focused mobile engineers, experienced with Kotlin and 
+> looking to get involved with Kotlin Multiplatorm in the near future. [More info here](https://on.touchlab.co/2P94J5q).
+
 ## Blog post and live demo
 
 Check out the [blog post and sign up for the live video demo](https://medium.com/@kpgalligan/kotlin-xcode-plugin-64f52ff8dc2a) on Friday 4/26 (3pm EST).
