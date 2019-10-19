@@ -52,15 +52,7 @@ far better than I ever will.
  
 [Tracking Issue Here](https://github.com/apollographql/xcode-graphql/issues/23)
 
-### Setup script
-
-Run the following command in your terminal:
-
-```
-./setup.sh
-```
-
-### Usage
+## Usage
 
 If properly set up, you should be able to add Kotlin source to Xcode, set up breakpoints, and step through code.
 Be careful not to have Kotlin source added to the iOS Bundle output.
@@ -79,11 +71,6 @@ files shipped with Xcode. Xcode plugin file from [GraphQL](https://github.com/ap
 
 LLDB formatting originally comes from the Kotlin/Native project, source [konan_lldb.py](https://github.com/JetBrains/kotlin-native/blob/dbb162a4b523071f31913e888e212df344a1b61e/llvmDebugInfoC/src/scripts/konan_lldb.py), although the way data is grabbed has been heavily modified to better
 support an interactive debugger.
-
-## Xcode 11 Beta
-
-The current version of the plugin will still allow you to add breakpoints and run the debugger, but source code highlighting is not yet functional. When Xcode 11 releases
-we'll dig back into the situation.
 
 ## Possible Future Stuff
 
