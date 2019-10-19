@@ -9,15 +9,48 @@ set breakpoints and includes llvm support to view data in the debug window.
 > Touchlab is looking for Android-focused mobile engineers, experienced with Kotlin and 
 > looking to get involved with Kotlin Multiplatorm in the near future. [More info here](https://on.touchlab.co/2P94J5q).
 
-## Blog post and live demo
+# Xcode 11+
 
-Check out the [blog post and sign up for the live video demo](https://medium.com/@kpgalligan/kotlin-xcode-plugin-64f52ff8dc2a) on Friday 4/26 (3pm EST).
+Xcode does not officially support custom language definitions, but they also don't explicitly block them. However, 
+Xcode 11 introduced several breaking changes from earlier versions, and some resolutions are still outstanding.
+
+## Xcode <= 10.x
+
+For earlier versions, please see [xcode10 branch](https://github.com/touchlab/xcode-kotlin/tree/xcode10). Life moves on, 
+and we'll only be supporting Xcode 11+.
 
 ## Installation
 
-### Watch Video
+There are 2 parts to Kotlin support: 1) debugging support and 2) language color and style formatting.
 
-[![Kotlin Xcode Setup](https://img.youtube.com/vi/CqzSyWI_esY/0.jpg)](https://www.youtube.com/watch?v=CqzSyWI_esY)
+### Step 1: Debugging Support
+
+You need to tell Xcode that `*.kt` files are source files, and run an lldb formatter script when debugging starts. 
+Advanced users may want to do this manually, but if you have Xcode installed in the default place, you can run the 
+setup script.
+
+```
+./setup.sh
+```
+
+### Step 2: Formatting Support
+
+In Xcode 11, you need to move some files into a protected area. Some users may not want to do this, and may possibly
+not have permissions to do this. You'll need to run the script with sufficient permissions, which generally means
+`sudo`.
+
+*You can still debug Kotlin without formatting support, just FYI. This step is not required.*
+
+```
+sudo ./colorsetup.sh
+```
+
+### Special Note
+
+All of that magic was sorted out by [Ellen Shapiro](https://github.com/designatednerd), who undrestands all of this 
+far better than I ever will.
+ 
+[Tracking Issue Here](https://github.com/apollographql/xcode-graphql/issues/23)
 
 ### Setup script
 
@@ -25,29 +58,6 @@ Run the following command in your terminal:
 
 ```
 ./setup.sh
-```
-
-### Manual installation
-
-Please note that if you are running Xcode 8 the `Plug-ins` and `Specifications` directories might not exist.
-
-- Copy the `Kotlin.ideplugin` directory to `~/Library/Developer/Xcode/Plug-ins/`:
-
-	```
-	cp -r Kotlin.ideplugin ~/Library/Developer/Xcode/Plug-ins/
-	```
-- Copy the `Kotlin.xclangspec` file to `~/Library/Developer/Xcode/Specifications`:
-
-	```
-	cp Kotlin.xclangspec ~/Library/Developer/Xcode/Specifications/
-	```
-
-lldb formatting support is provided by konan_lldb.py. The setup script will add
-the path to `~/.lldbinit`. You can manually load this script at the lldb prompt
-with
-
-```
-command script import ~/Library/Developer/Xcode/Plug-ins/Kotlin.ideplugin/Contents/Resources/konan_lldb.py
 ```
 
 ### Usage
@@ -75,21 +85,7 @@ support an interactive debugger.
 The current version of the plugin will still allow you to add breakpoints and run the debugger, but source code highlighting is not yet functional. When Xcode 11 releases
 we'll dig back into the situation.
 
-## Coming Soon
-
-### LLDB Formatter
-
-The plugin itself relies on the lldb python formatter which was mostly adapted from the lldb formatter that comes with Kotlin Native. That script was really written for command line use. In an interactive context (like this plugin) the performance isn't great. Most of our changes are around optimizations. However, there are ongoing changes both to the underlying script and (possibly) to the memory layout of Kotlin Native itself at runtime.
-
-The script in this plugin could use a refresh with a more recent base version from Kotlin Native, and if possible, refactor the optimizations to be as close to "stock" as possible, to make future updates easier.
-
-The formatter also takes a very basic approach to data formatting. Lists are capped at 20 entries to avoid super long refreshes. Maps show their underlying data structures, but could get custom formatting (for example). There is a lot that could be done.
-
-We currently can't get some things like class name. This could be enabled with moderate additions to Kotlin Native debug facilities.
-
-### Debug aligning
-
-The breakpoints and runtime *usually* line up, but they can get weird. This is especially true around things like lambdas. This *may* be related to what the llvm compiler is writing, or it may simply be an artifact of how Xcode is setting breakpoints. We'll need reports and repros of code that confuses the debugger to see if that can be improved.
+## Possible Future Stuff
 
 ### Color File
 
@@ -98,6 +94,16 @@ The color definition is basically Java's with minor additions. This could be bet
 ### Install
 
 It's a bash script, which works, but does not take into account non-standard install directories and various other possible config options. This could be improved.
+
+### From Swift
+
+You can see variables when you're debugging Kotlin, but when you're in a swift file that has a class that came from Kotlin
+you can't see much. It would be great to be able to improve that.
+
+### Better Debug Alignment
+
+This happens in the Kotlin compiler, so it's a little deeper, but the breakpoints don't always track with the source 
+when there are more complex structures (lambdas, etc). This should improve over time.
 
 ## Xcode Updates
 

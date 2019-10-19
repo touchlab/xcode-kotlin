@@ -13,18 +13,6 @@ fi
 cp -r Kotlin.ideplugin $plugins_dir
 
 ###################
-# LANGUAGE SPEC
-###################
-
-spec_dir=~/Library/Developer/Xcode/Specifications
-
-if [ ! -d "$spec_dir" ]; then
-	mkdir -p $spec_dir
-fi
-
-cp Kotlin.xclangspec $spec_dir
-
-###################
 # LLDB DEFINITIONS
 ###################
 
