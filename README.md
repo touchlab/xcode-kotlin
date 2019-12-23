@@ -45,6 +45,10 @@ not have permissions to do this. You'll need to run the script with sufficient p
 sudo ./colorsetup.sh
 ```
 
+## Kotlin 1.3.60 Issue
+
+Using static frameworks and/or Cocoapods may remove debug info in this version. [More info here](https://github.com/JetBrains/kotlin-native/issues/3446)
+
 ### Special Note
 
 All of that magic was sorted out by [Ellen Shapiro](https://github.com/designatednerd), who undrestands all of this 
