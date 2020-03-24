@@ -45,6 +45,10 @@ not have permissions to do this. You'll need to run the script with sufficient p
 sudo ./colorsetup.sh
 ```
 
+## Kotlin 1.3.6x Issue
+
+Using static frameworks and/or Cocoapods may remove debug info in this version. [More info here](https://github.com/JetBrains/kotlin-native/issues/3446)
+
 ### Special Note
 
 All of that magic was sorted out by [Ellen Shapiro](https://github.com/designatednerd), who undrestands all of this 
@@ -55,9 +59,10 @@ far better than I ever will.
 ## Usage
 
 If properly set up, you should be able to add Kotlin source to Xcode, set up breakpoints, and step through code.
-Be careful not to have Kotlin source added to the iOS Bundle output.
 
-To help automate adding Kotlin source, check out the [Kotlin Xcode Sync](https://github.com/touchlab/KotlinXcodeSync) Gradle plugin.
+We're deprecating the Xcode Sync plugin. Add folder reference instead! [See issue](https://github.com/touchlab/xcode-kotlin/issues/16). Description and video coming soon.
+
+~~To help automate adding Kotlin source, check out the [Kotlin Xcode Sync](https://github.com/touchlab/KotlinXcodeSync) Gradle plugin.~~
 
 ### Sample
 
