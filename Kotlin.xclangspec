@@ -78,6 +78,7 @@
                 "class",
                 "const",
                 "continue",
+                "data",
                 "default",
                 "do",
                 "double",
@@ -104,11 +105,14 @@
                 "native",
                 "new",
                 "null",
+                "object",
+                "override",
                 "package",
                 "private",
                 "protected",
                 "public",
                 "return",
+                "sealed",
                 "short",
                 "static",
                 "strictfp",
@@ -126,6 +130,7 @@
                 "var",
                 "void",
                 "volatile",
+                "when",
                 "while"
              );
             Type = "xcode.syntax.keyword";
