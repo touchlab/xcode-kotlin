@@ -12,7 +12,7 @@ plugins_dir=~/Library/Developer/Xcode/Plug-ins/
 ###################
 
 if pgrep -xq -- "${service}"; then
-  echo "Xcode is running. Attempt to shut down?"
+  echo "Xcode is running. Attempt to shut down? y/n"
   read answer
   if [ "$answer" = "y" ]; then
     echo "Shutting down Xcode"
