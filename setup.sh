@@ -24,13 +24,17 @@ if pgrep -xq -- "${service}"; then
 fi
 
 ###################
+# DELETE EXISTING PLUG-IN
+###################
 
 if [ -d "${plugins_dir}Kotlin.ideplugin/" ]; then
-	echo "Plugins directory and Kotlin plugin found. Deleting..."
-  rm -rf $plugins_dir
-  open -a $service
-  pkill -x $service
+  echo "Plugins directory and Kotlin plugin found..."
+  defaults delete com.apple.dt.Xcode DVTPlugInManagerNonApplePlugIns-Xcode-$(xcodebuild -version | grep Xcode | cut -d ' ' -f 2)
 fi
+
+###################
+# CREATE PLUG-IN
+###################
 
 echo "Creating plugins directory"
 mkdir -p $plugins_dir
@@ -45,11 +49,11 @@ lldb_format="command script import ~/Library/Developer/Xcode/Plug-ins/Kotlin.ide
 
 if grep --quiet	-s konan_lldb ~/.lldbinit-Xcode
 then
-    # code if found
-		echo "konan_lldb.py found in ~/.lldbinit-Xcode"
+  # code if found
+  echo "konan_lldb.py found in ~/.lldbinit-Xcode"
 else
-    # code if not found
-		echo $lldb_config >> ~/.lldbinit-Xcode
-		echo $lldb_format >> ~/.lldbinit-Xcode
+  # code if not found
+  echo $lldb_config >> ~/.lldbinit-Xcode
+  echo $lldb_format >> ~/.lldbinit-Xcode
 fi
 
