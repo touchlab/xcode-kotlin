@@ -1,21 +1,35 @@
 #!/usr/bin/env bash
 
-# Use this script for versions of Xcode other than Xcode 11.
-
 set -o xtrace
 
 ###################
 # DEFINITIONS
 ###################
 
-plugins_dir=~/Library/Developer/Xcode/Plug-ins
-spec_dir=~/Library/Developer/Xcode/Specifications
+service='Xcode'
+plugins_dir=~/Library/Developer/Xcode/Plug-ins/
 
 ###################
-# FORGET EXISTING PLUG-IN 
+# SHUT DOWN XCODE IF IT'S RUNNING
 ###################
 
-if [ ! -d "$plugins_dir/Kotlin.ideplugin/" ]; then
+if pgrep -xq -- "${service}"; then
+  echo "Xcode is running. Attempt to shut down? y/n"
+  read answer
+  if [ "$answer" = "y" ]; then
+    echo "Shutting down Xcode"
+    pkill -x $service
+  else
+    echo "Xcode needs to be closed"
+    exit 1
+  fi
+fi
+
+###################
+# DELETE EXISTING PLUG-IN
+###################
+
+if [ -d "${plugins_dir}Kotlin.ideplugin/" ]; then
   echo "Plugins directory and Kotlin plugin found..."
   defaults delete com.apple.dt.Xcode DVTPlugInManagerNonApplePlugIns-Xcode-$(xcodebuild -version | grep Xcode | cut -d ' ' -f 2)
 fi
@@ -27,14 +41,6 @@ fi
 echo "Creating plugins directory"
 mkdir -p $plugins_dir
 cp -r Kotlin.ideplugin $plugins_dir
-
-###################
-# CREATE SPECS DIR
-###################
-
-if [ ! -d "$spec_dir" ]; then
-	mkdir $spec_dir
-fi
 
 ###################
 # LLDB DEFINITIONS
