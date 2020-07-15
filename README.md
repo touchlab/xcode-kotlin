@@ -1,48 +1,39 @@
 # Kotlin Native Xcode Support
 
-Plugin to facilitate debugging iOS applications using Kotlin Native in Xcode.
-Defines Kotlin files as source code, with basic highlighting. Allows you to
-set breakpoints and includes llvm support to view data in the debug window.
+Plugin to facilitate debugging iOS applications using Kotlin Native in Xcode. Defines Kotlin files as source code, with basic highlighting. Allows you to set breakpoints and includes llvm support to view data in the debug window. Xcode does not officially support custom language definitions, but they also don't explicitly block them.
 
 > ## **We're Hiring!**
 >
-> Touchlab is looking for Android-focused mobile engineers, experienced with Kotlin and 
-> looking to get involved with Kotlin Multiplatorm in the near future. [More info here](https://on.touchlab.co/2P94J5q).
-
-# Xcode 11+
-
-Xcode does not officially support custom language definitions, but they also don't explicitly block them. However, 
-Xcode 11 introduced several breaking changes from earlier versions, and some resolutions are still outstanding.
-
-## Xcode <= 10.x
-
-For earlier versions, please see [xcode10 branch](https://github.com/touchlab/xcode-kotlin/tree/xcode10). Life moves on, 
-and we'll only be supporting Xcode 11+.
+> Touchlab is looking for Android-focused mobile engineers, experienced with Kotlin and looking to get involved with Kotlin Multiplatorm in the near future. [More info here](https://on.touchlab.co/2P94J5q).
 
 ## Installation
 
 There are 2 parts to Kotlin support: 1) debugging support and 2) language color and style formatting.
 
-### Step 1: Debugging Support
+You need to tell Xcode that `*.kt` files are source files, and run an lldb formatter script when debugging starts. Advanced users may want to do this manually, but if you have Xcode installed in the default place, you can run the setup script.
 
-You need to tell Xcode that `*.kt` files are source files, and run an lldb formatter script when debugging starts. 
-Advanced users may want to do this manually, but if you have Xcode installed in the default place, you can run the 
-setup script.
+### Xcode 11
+
+For debugging support in Xcode 11, run the installation script:
 
 ```
-./setup.sh
+./setup-xcode11.sh
 ```
 
-### Step 2: Formatting Support
+ Xcode 11 introduced several breaking changes from earlier versions, and some resolutions are still outstanding. If you're using Xcode 11, you need to move some files into a protected area. Some users may not want to do this, and may possibly not have permissions to do this. You'll need to run the formatting support script with sufficient permissions, which generally means `sudo`.
 
-In Xcode 11, you need to move some files into a protected area. Some users may not want to do this, and may possibly
-not have permissions to do this. You'll need to run the script with sufficient permissions, which generally means
-`sudo`.
+```
+sudo ./colorsetup-xcode11.sh
+```
 
 *You can still debug Kotlin without formatting support, just FYI. This step is not required.*
 
+### All Other Xcode Versions
+
+For all other versions of Xcode, the following script will install both debugging and formatting support:
+
 ```
-sudo ./colorsetup.sh
+./setup.sh
 ```
 
 ## Kotlin 1.3.6x Issue
@@ -70,12 +61,9 @@ The [Droidcon NYC](https://github.com/touchlab/DroidconKotlin/) app has both the
 
 ### Sources
 
-Setting up the Plugin has been an amalgam of various source projects, as Xcode "Plugins"
-are undocumented. The most significant piece, the language color file, came from other color 
-files shipped with Xcode. Xcode plugin file from [GraphQL](https://github.com/apollographql/xcode-graphql/blob/master/GraphQL.ideplugin/Contents/Resources/GraphQL.xcplugindata)
+Setting up the Plugin has been an amalgam of various source projects, as Xcode "Plugins" are undocumented. The most significant piece, the language color file came from other color files shipped with Xcode. Xcode plugin file from [GraphQL](https://github.com/apollographql/xcode-graphql/blob/master/GraphQL.ideplugin/Contents/Resources/GraphQL.xcplugindata)
 
-LLDB formatting originally comes from the Kotlin/Native project, source [konan_lldb.py](https://github.com/JetBrains/kotlin-native/blob/dbb162a4b523071f31913e888e212df344a1b61e/llvmDebugInfoC/src/scripts/konan_lldb.py), although the way data is grabbed has been heavily modified to better
-support an interactive debugger.
+LLDB formatting originally comes from the Kotlin/Native project, source [konan_lldb.py](https://github.com/JetBrains/kotlin-native/blob/dbb162a4b523071f31913e888e212df344a1b61e/llvmDebugInfoC/src/scripts/konan_lldb.py), although the way data is grabbed has been heavily modified to better support an interactive debugger.
 
 ## Possible Future Stuff
 

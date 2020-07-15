@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-set -o xtrace
+# Use this script for Xcode 11.
 
 ###################
 # DEFINITIONS
 ###################
 
 service='Xcode'
-plugins_dir=~/Library/Developer/Xcode/Plug-ins/
+plugins_dir=~/Library/Developer/Xcode/Plug-ins
 
 ###################
 # SHUT DOWN XCODE IF IT'S RUNNING
@@ -26,11 +26,12 @@ if pgrep -xq -- "${service}"; then
 fi
 
 ###################
-# DELETE EXISTING PLUG-IN
+# FORGET EXISTING PLUG-IN 
 ###################
 
-if [ -d "${plugins_dir}Kotlin.ideplugin/" ]; then
-  echo "Plugins directory and Kotlin plugin found..."
+if [ -d "${plugins_dir}/Kotlin.ideplugin/" ]; then
+  echo "Kotlin plugin found. Deleting and forgetting..."
+  rm -rf "$plugins_dir/Kotlin.ideplugin/"
   defaults delete com.apple.dt.Xcode DVTPlugInManagerNonApplePlugIns-Xcode-$(xcodebuild -version | grep Xcode | cut -d ' ' -f 2)
 fi
 
@@ -38,7 +39,7 @@ fi
 # CREATE PLUG-IN
 ###################
 
-echo "Creating plugins directory"
+echo "Creating new Kotlin plugin"
 mkdir -p $plugins_dir
 cp -r Kotlin.ideplugin $plugins_dir
 
