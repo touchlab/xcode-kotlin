@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Use this script for versions of Xcode other than Xcode 11.
+# Use this script for Xcode 11.
 
 ###################
 # DEFINITIONS
@@ -8,7 +8,6 @@
 
 service='Xcode'
 plugins_dir=~/Library/Developer/Xcode/Plug-ins
-spec_dir=~/Library/Developer/Xcode/Specifications
 
 ###################
 # SHUT DOWN XCODE IF IT'S RUNNING
@@ -18,7 +17,7 @@ if pgrep -xq -- "${service}"; then
   echo "Xcode is running. Attempt to shut down? y/n"
   read answer
   if [ "$answer" = "y" ]; then
-    echo "Shutting down Xcode..."
+    echo "Shutting down Xcode"
     pkill -x $service
   else
     echo "Xcode needs to be closed"
@@ -30,12 +29,7 @@ fi
 # FORGET EXISTING PLUG-IN 
 ###################
 
-if [ -d "$spec_dir/Kotlin.xclangspec" ]; then
-  echo "Kotlin language spec found. Deleting..."
-  rm "$spec_dir/Kotlin.xclangspec"
-fi
-
-if [ -d "$plugins_dir/Kotlin.ideplugin/" ]; then
+if [ -d "${plugins_dir}/Kotlin.ideplugin/" ]; then
   echo "Kotlin plugin found. Deleting and forgetting..."
   rm -rf "$plugins_dir/Kotlin.ideplugin/"
   defaults delete com.apple.dt.Xcode DVTPlugInManagerNonApplePlugIns-Xcode-$(xcodebuild -version | grep Xcode | cut -d ' ' -f 2)
@@ -48,14 +42,6 @@ fi
 echo "Creating new Kotlin plugin"
 mkdir -p $plugins_dir
 cp -r Kotlin.ideplugin $plugins_dir
-
-###################
-# CREATE SPECS DIR
-###################
-
-echo "Creating new Kotlin language spec"
-mkdir -p $spec_dir
-cp Kotlin.xclangspec $spec_dir
 
 ###################
 # LLDB DEFINITIONS
