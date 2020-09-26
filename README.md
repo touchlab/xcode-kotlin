@@ -42,7 +42,7 @@ Using static frameworks and/or Cocoapods may remove debug info in this version. 
 
 ### Special Note
 
-All of that magic was sorted out by [Ellen Shapiro](https://github.com/designatednerd), who undrestands all of this 
+All of that magic was sorted out by [Ellen Shapiro](https://github.com/designatednerd), who understands all of this 
 far better than I ever will.
  
 [Tracking Issue Here](https://github.com/apollographql/xcode-graphql/issues/23)
