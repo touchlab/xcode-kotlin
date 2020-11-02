@@ -12,15 +12,15 @@ There are 2 parts to Kotlin support: 1) debugging support and 2) language color 
 
 You need to tell Xcode that `*.kt` files are source files, and run an lldb formatter script when debugging starts. Advanced users may want to do this manually, but if you have Xcode installed in the default place, you can run the setup script.
 
-### Xcode 11
+### Xcode 11 and newer versions
 
-For debugging support in Xcode 11, run the installation script:
+For debugging support in Xcode 11 or a newer version, run the installation script:
 
 ```
 ./setup-xcode11.sh
 ```
 
- Xcode 11 introduced several breaking changes from earlier versions, and some resolutions are still outstanding. If you're using Xcode 11, you need to move some files into a protected area. Some users may not want to do this, and may possibly not have permissions to do this. You'll need to run the formatting support script with sufficient permissions, which generally means `sudo`.
+ Xcode 11 introduced several breaking changes from earlier versions, and some resolutions are still outstanding. If you're using Xcode 11 or a newer version, you need to move some files into a protected area. Some users may not want to do this, and may possibly not have permissions to do this. You'll need to run the formatting support script with sufficient permissions, which generally means `sudo`.
 
 ```
 sudo ./colorsetup-xcode11.sh
