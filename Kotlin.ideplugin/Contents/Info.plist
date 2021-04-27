@@ -60,6 +60,8 @@
 		<string>3928AC50-EA32-404F-9CAF-49710A35483C</string>
 		<!-- Xcode 12.4 (12D4e) -->
 		<string>2F1A5FFF-BFEB-4498-B2AC-1296A7454F81</string>
+		<!-- Xcode 12.5 (12E262) -->
+		<string>F56A1938-53DE-493D-9D64-87EE6C415E4D</string>
 	</array>
 	<key>XCPluginHasUI</key>
 	<false/>
