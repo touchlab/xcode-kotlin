@@ -64,6 +64,8 @@
 		<string>F56A1938-53DE-493D-9D64-87EE6C415E4D</string>
 		<!-- Xcode 13.0 (13A233)-->
 		<string>8BAA96B4-5225-471B-B124-D32A349B8106</string>
+		<!-- Xcode 13.1 (13A1030d)-->
+		<string>8BAA96B4-5225-471B-B124-D32A349B8106</string>
 	</array>
 	<key>XCPluginHasUI</key>
 	<false/>
