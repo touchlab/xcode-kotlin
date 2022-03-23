@@ -12,9 +12,7 @@ Plugin to facilitate debugging iOS applications using Kotlin Native in Xcode. De
 
 There are 2 parts to Kotlin support: 1) debugging support and 2) language color and style formatting.
 
-You need to tell Xcode that `*.kt` files are source files, and run an lldb formatter script when debugging starts. Advanced users may want to do this manually, but if you have Xcode installed in the default place, you can run the setup script.
-
-Unless you're using Xcode 11 (in which case look [here](xcode11/XCODE_11.md) for help), the following script will install both debugging and formatting support:
+You need to tell Xcode that `*.kt` files are source files, and run an lldb formatter script when debugging starts. Advanced users may want to do this manually, but generally you can just run the setup script:
 
 ```
 ./setup.sh
