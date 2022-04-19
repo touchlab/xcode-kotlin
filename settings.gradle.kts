@@ -1,4 +1,4 @@
 
-rootProject.name = "xcode-kotlin-cli"
+rootProject.name = "xcode-kotlin"
 
 enableFeaturePreview("VERSION_CATALOGS")
