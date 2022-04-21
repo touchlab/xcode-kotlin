@@ -8,17 +8,23 @@ Plugin to facilitate debugging iOS applications using Kotlin Native in Xcode. De
 
 ## Installation
 
-Generally, all you need to do is run the setup script:
+First you need to install the CLI that takes care of installing the plugin into Xcode. The CLI is available throuh Homebrew:
 
-```
-./setup.sh
+```shell
+brew install touchlab/homebrew-touchlab/xcode-kotlin --head
 ```
 
-After install completes, Xcode will ask if you want to Load Bundle. You need to do that, or Xcode will not load the changes.
+Once installed, run the CLI:
+
+```shell
+xcode-kotlin install
+```
+
+This will install the plugin with support for all of your currently installed Xcodes. After install completes, Xcode will ask if you want to Load Bundle. You need to do that, or Xcode will not load the changes.
 
 For advanced users, or if you have issues, you may want to install manually. There are 2 parts to Kotlin support: 1) debugging support and 2) language color and style formatting.
 
-You need to tell Xcode that `*.kt` files are source files, and run an lldb formatter script when debugging starts. Look at the setup script and see the folders where those parts go.
+You need to tell Xcode that `*.kt` files are source files, and run an lldb formatter script when debugging starts. Look at the `setup.sh` script in the `legacy` directory and see the folders where those parts go.
 
 ## Usage
 
@@ -50,11 +56,41 @@ Check out the [Discussions](https://github.com/touchlab/xcode-kotlin/discussions
 
 ## Xcode Updates
 
-Every time Xcode is updated we need the UUID. It needs to be added to `Kotlin.ideplugin/Contents/Info.plist`. To find the 
-UUID of your version of Xcode, run the following:
+Every time your Xcode is updated, the plugin needs to know its UUID. If you have the CLI installed, run:
+
+```shell
+xcode-kotlin repair
+```
+
+It will make sure all of your installed Xcodes' UUIDs are added to the plugin's compatibility list.
+
+If you installed the plugin manually, the UUID needs to be added to `Kotlin.ideplugin/Contents/Info.plist`. To find the UUID of your version of Xcode, run the following:
 
 ```
 defaults read /Applications/Xcode.app/Contents/Info DVTPlugInCompatibilityUUID
 ```
 
 Info [from here](https://www.mokacoding.com/blog/xcode-plugins-update/)
+
+## Troubleshooting
+
+If you're having any issues, try reinstalling the plugin:
+
+```shell
+xcode-kotlin uninstall
+xcode-kotlin install
+```
+
+If it doesn't fix the issue, run:
+
+```shell
+xcode-kotlin info
+```
+
+This will show you status of the plugin and a list of found Xcodes. If the Xcode you want to use isn't listed you can run the `repair` command and provide it with paths to Xcodes to add support for:
+
+```
+xcode-kotlin repair /Volumes/ExternalVolume1/Xcode.app
+```
+
+If the issue still persists, open a new GitHub issue and include the output of the `info` command.
