@@ -5,7 +5,7 @@ import platform.posix.fprintf
 import platform.posix.stderr
 
 object Console {
-    fun echo(text: String) {
+    fun echo(text: String = "") {
         println(text)
     }
 

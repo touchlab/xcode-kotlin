@@ -74,7 +74,7 @@ class PropertyList(val root: Object) {
         ): Object
     }
 
-    fun toData(format: Format = Format.Binary): NSData? {
+    fun toData(format: Format = Format.Binary): NSData {
         return memScoped {
             val errorPointer: ObjCObjectVar<NSError?> = alloc()
             val data = NSPropertyListSerialization.dataWithPropertyList(
@@ -117,10 +117,10 @@ class PropertyList(val root: Object) {
     class SerializationException(val error: NSError): Exception("Could not serialize property list. Error: ${error.description}.")
 
     companion object {
-        fun create(path: Path): PropertyList? {
-            val data = NSData.create(contentsOfFile = path.value) ?: return null
-            return create(data)
-        }
+        fun create(path: Path): PropertyList = create(File(path))
+
+        fun create(file: File): PropertyList = create(file.dataContents())
+
         fun create(data: NSData): PropertyList {
             val rawPropertyList = memScoped {
                 val errorPointer: ObjCObjectVar<NSError?> = alloc()

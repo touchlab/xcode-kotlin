@@ -2,6 +2,7 @@ package co.touchlab.xcode.cli.util
 
 import platform.Foundation.NSBundle
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSHomeDirectory
 import platform.Foundation.NSString
 import platform.Foundation.stringByAppendingPathComponent
 import platform.Foundation.stringByDeletingLastPathComponent
@@ -35,6 +36,9 @@ data class Path(
     }
 
     companion object {
+        val home: Path
+            get() = Path(NSHomeDirectory())
+
         val workDir: Path
             get() = Path(NSFileManager.defaultManager.currentDirectoryPath)
 

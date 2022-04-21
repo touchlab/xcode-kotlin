@@ -1,10 +1,19 @@
 package co.touchlab.xcode.cli.command
 
 import co.touchlab.xcode.cli.PluginManager
-import kotlinx.cli.Subcommand
+import co.touchlab.xcode.cli.XcodeHelper
+import co.touchlab.xcode.cli.util.Path
 
-class Repair: Subcommand("repair", "Repairs currently installed Xcode Kotlin plugin") {
+class Repair: BaseXcodeListSubcommand("repair", "Repairs currently installed Xcode Kotlin plugin") {
     override fun execute() {
-        TODO("Not yet implemented")
+        val providedXcodeInstallations = providedXcodePaths.map { XcodeHelper.installationAt(Path(it)) }
+        val xcodes = if (onlyProvidedXcodes) {
+            providedXcodeInstallations
+        } else {
+            XcodeHelper.installedXcodes() + providedXcodeInstallations
+        }
+        XcodeHelper.ensureXcodeNotRunning()
+        PluginManager.repair(xcodeInstallations())
     }
 }
+

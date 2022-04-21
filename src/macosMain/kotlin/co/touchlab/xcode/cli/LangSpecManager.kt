@@ -1,12 +1,22 @@
 package co.touchlab.xcode.cli
 
-import platform.Foundation.NSFileManager
+import co.touchlab.xcode.cli.util.File
+import co.touchlab.xcode.cli.util.Path
 
 object LangSpecManager {
-    val specName = "Kotlin.xclangspec"
-    val specTargetUrl = XcodeHelper.xcodeLibraryPath / "Specifications" / specName
+    private val specName = "Kotlin.xclangspec"
+    private val specSourceFile = File(Path.dataDir / specName)
+    private val specTargetFile = File(XcodeHelper.xcodeLibraryPath / "Specifications" / specName)
 
     val isInstalled: Boolean
-        get() = NSFileManager.defaultManager.fileExistsAtPath(specTargetUrl.value)
+        get() = specTargetFile.exists()
 
+    fun install() {
+        check(!specTargetFile.exists()) { "Language spec file exists at path ${specTargetFile.path}! Delete it first." }
+        specSourceFile.copy(specTargetFile.path)
+    }
+
+    fun uninstall() {
+        specTargetFile.delete()
+    }
 }
