@@ -18,7 +18,7 @@ object PluginManager {
 
     val bundledVersion: Version
         get() {
-            val pluginInfo = PropertyList.create(pluginSourceInfoFile) ?: TODO("ERROR")
+            val pluginInfo = PropertyList.create(pluginSourceInfoFile)
             return Version.fromString(pluginInfo.root.dictionary.getValue(pluginVersionInfoKey).string.value)
         }
 
