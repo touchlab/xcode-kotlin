@@ -27,6 +27,7 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.cli)
                 implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kermit)
             }
         }
         val macosMain by creating {
@@ -52,6 +53,10 @@ kotlin {
         }
         val macosArm64Test by getting {
             dependsOn(macosTest)
+        }
+
+        all {
+            languageSettings.optIn("kotlinx.cli.ExperimentalCli")
         }
     }
 }
