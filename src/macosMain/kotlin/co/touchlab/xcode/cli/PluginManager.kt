@@ -1,5 +1,6 @@
 package co.touchlab.xcode.cli
 
+import co.touchlab.xcode.cli.util.Console
 import co.touchlab.xcode.cli.util.File
 import co.touchlab.xcode.cli.util.Path
 import co.touchlab.xcode.cli.util.PropertyList
@@ -30,6 +31,9 @@ object PluginManager {
             null
         }
 
+    val isInstalled: Boolean
+        get() = pluginTargetFile.exists()
+
     val targetSupportedXcodeUUIds: List<String>
         get() = if (pluginTargetFile.exists()) {
             PropertyList.create(pluginTargetInfoFile)
@@ -52,11 +56,22 @@ object PluginManager {
 
     fun repair(xcodes: List<XcodeHelper.XcodeInstallation>) {
         XcodeHelper.removeKotlinPluginFromDefaults()
-        val pluginCompatibilityIds = xcodes.map { it.pluginCompatabilityId }
-        val infoPlist = PropertyList.create(pluginTargetInfoFile)
-        infoPlist.root.dictionary.getOrPut(pluginCompatibilityInfoKey) { PropertyList.Object.Array(mutableListOf()) }
-            .array.addAll(pluginCompatibilityIds.map { PropertyList.Object.String(it) })
-        pluginTargetInfoFile.write(infoPlist.toData(PropertyList.Format.XML))
+        if (isInstalled) {
+            Console.echo("Repairing plugin compatibility list.")
+            val additionalPluginCompatibilityIds = xcodes.map { PropertyList.Object.String(it.pluginCompatabilityId) }
+            val infoPlist = PropertyList.create(pluginTargetInfoFile)
+            val rootDictionary = infoPlist.root.dictionary
+            val oldPluginCompatibilityIds = rootDictionary
+                .getOrPut(pluginCompatibilityInfoKey) { PropertyList.Object.Array(mutableListOf()) }
+                .array
+            oldPluginCompatibilityIds.addAll(additionalPluginCompatibilityIds)
+            rootDictionary[pluginCompatibilityInfoKey] = PropertyList.Object.Array(
+                oldPluginCompatibilityIds.distinctBy { it.stringOrNull?.value }.toMutableList()
+            )
+            pluginTargetInfoFile.write(infoPlist.toData(PropertyList.Format.XML))
+        } else {
+            Console.echo("Plugin not installed, nothing to repair.")
+        }
     }
 
     fun uninstall() {

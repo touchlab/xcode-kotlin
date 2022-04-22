@@ -85,6 +85,7 @@ object XcodeHelper {
     }
 
     fun removeKotlinPluginFromDefaults() {
+        logger.i { "Removing plugin from allowed/skipped list in Xcode defaults." }
         val backupPath = BackupHelper.backupPath("XcodeDefaults.plist")
         logger.i { "Saving a backup of com.apple.dt.Xcode defaults to `$backupPath`" }
         Shell.exec("/usr/bin/defaults", "export", "com.apple.dt.Xcode", backupPath.value).checkSuccessful {
