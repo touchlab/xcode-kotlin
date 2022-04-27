@@ -1,10 +1,26 @@
 # Kotlin Native Xcode Support
 
-Plugin to facilitate debugging iOS applications using Kotlin Native in Xcode. Defines Kotlin files as source code, with basic highlighting. Allows you to set breakpoints and includes llvm support to view data in the debug window. Xcode does not officially support custom language definitions, but they also don't explicitly block them.
+Plugin that enables debugging Kotlin code in iOS applications with Xcode. This is generally for use with Kotlin Multiplatform and Kotlin/Native code shared as Xcode Frameworks. The plugin tells Xcode that Kotlin files are source code, provides source highlighting, and enables llvm and lldb support to allow interactive debugging.
 
 > ## Touchlab's Hiring!
 >
 > We're looking for a Mobile Developer, with Android/Kotlin experience, who is eager to dive into Kotlin Multiplatform Mobile (KMM) development. Come join the remote-first team putting KMM in production. [More info here](https://go.touchlab.co/careers-gh).
+
+## Overview
+
+The `xcode-kotlin` project consists of two main parts: the CLI manager, and the Xcode plugin itself.
+
+### CLI
+
+The CLI (command line interface) is an executable that is installed on your machine and manages the plugin installation(s). For existing users of `xcode-kotlin`, the CLI is new. The CLI was added to enable the following:
+
+- Homebrew installation
+- Easier management of multiple Xcode installations
+- Automatic "repair". When Xcode updates, we need to update the plugin config. This previously required updating the `xcode-kotlin` project repo, and pulling locally. The CLI can do this automatically.
+
+### Xcode Plugin
+
+Xcode does not generally allow plugins, but it does allow for language definitions and lldb integrations. There is no official process for including these things, which is why the CLI is necessary. However, lldb is an open standard and debugging integrations are a common use case. We share, and contribute to, the [official Kotlin language lldb extensions](https://github.com/JetBrains/kotlin/blob/master/kotlin-native/llvmDebugInfoC/src/scripts/konan_lldb.py).
 
 ## Installation
 
@@ -20,13 +36,23 @@ Once installed, run the CLI:
 xcode-kotlin install
 ```
 
-This will install the plugin with support for all of your currently installed Xcodes. After install completes, Xcode will ask if you want to Load Bundle. You need to do that, or Xcode will not load the changes.
+This will install the plugin with support for all of your currently installed Xcode installations. After install completes, Xcode will ask if you want to Load Bundle. You need to do that, or Xcode will not load the changes.
 
-For advanced users, or if you have issues, you may want to install manually. There are 2 parts to Kotlin support: 1) debugging support and 2) language color and style formatting.
+![loadbundle](https://tl-navigator-images.s3.us-east-1.amazonaws.com/docimages/2022-04-27_08-03-loadbundle.png)
 
-You need to tell Xcode that `*.kt` files are source files, and run an lldb formatter script when debugging starts. Look at the `setup.sh` script in the `legacy` directory and see the folders where those parts go.
+If needed, you can install manually. See [MANUAL_INSTALL](MANUAL_INSTALL.md).
 
-## Usage
+## Repair
+
+When you update Xcode versions, you'll need to enable the plugin for that version. Run:
+
+```shell
+xcode-kotlin repair
+```
+
+This process adds the UUID for the new Xcode version to the local plugin configuration. For users familiar with earlier versions of `xcode-kotlin`, Xcode updates would previously require an [update from GitHub](https://github.com/touchlab/xcode-kotlin/pull/37/files).
+
+## Plugin Usage
 
 If properly set up, you should be able to add Kotlin source to Xcode, set up breakpoints, and step through code. To add Kotlin source to Xcode, follow these steps:
 
@@ -34,43 +60,15 @@ If properly set up, you should be able to add Kotlin source to Xcode, set up bre
 2. Add Files to the newly created group (Kotlin Debug in this instance).
 3. Select the folders in the Kotlin library that are directly relevant to the iOS build, which will usually be `commonMain` and `iosMain`. Make sure "Copy items into destination group's folder (if needed)" is unchecked.
 
-![](images/XcodeKotlinFileReferencesSteps.png)
+<img src="https://tl-navigator-images.s3.us-east-1.amazonaws.com/docimages/2022-04-27_08-31-XcodeKotlinFileReferencesSteps.png" alt="XcodeKotlinFileReferencesSteps" style="zoom: 25%;" />
 
 When you're done, your Xcode project structure should look something like this:
 
-![](images/final.png)
+<img src="https://tl-navigator-images.s3.us-east-1.amazonaws.com/docimages/2022-04-27_08-31-final.png" alt="final" style="zoom: 33%;" />
 
 ### Sample
 
 The project used as an example above is [KaMPKit](https://github.com/touchlab/KaMPKit/). Check it out if you want to see a project that already includes Kotlin file references in Xcode. It's an excellent template for Kotlin multiplatform mobile projects.
-
-### Sources
-
-Setting up the Plugin has been an amalgam of various source projects, as Xcode "Plugins" are undocumented. The most significant piece, the language color file came from other color files shipped with Xcode. Xcode plugin file from [GraphQL](https://github.com/apollographql/xcode-graphql/blob/master/GraphQL.ideplugin/Contents/Resources/GraphQL.xcplugindata)
-
-LLDB formatting originally comes from the Kotlin/Native project, source [konan_lldb.py](https://github.com/JetBrains/kotlin-native/blob/dbb162a4b523071f31913e888e212df344a1b61e/llvmDebugInfoC/src/scripts/konan_lldb.py), although the way data is grabbed has been heavily modified to better support an interactive debugger.
-
-## Possible Future Stuff
-
-Check out the [Discussions](https://github.com/touchlab/xcode-kotlin/discussions/).
-
-## Xcode Updates
-
-Every time your Xcode is updated, the plugin needs to know its UUID. If you have the CLI installed, run:
-
-```shell
-xcode-kotlin repair
-```
-
-It will make sure all of your installed Xcodes' UUIDs are added to the plugin's compatibility list.
-
-If you installed the plugin manually, the UUID needs to be added to `Kotlin.ideplugin/Contents/Info.plist`. To find the UUID of your version of Xcode, run the following:
-
-```
-defaults read /Applications/Xcode.app/Contents/Info DVTPlugInCompatibilityUUID
-```
-
-Info [from here](https://www.mokacoding.com/blog/xcode-plugins-update/)
 
 ## Troubleshooting
 
@@ -94,3 +92,7 @@ xcode-kotlin repair /Volumes/ExternalVolume1/Xcode.app
 ```
 
 If the issue still persists, open a new GitHub issue and include the output of the `info` command.
+
+## About
+
+Our Xcode plugin incorporates the work of other brave souls around the web exploring the undocumented corners of Xcode. See [ABOUT](ABOUT.md).
