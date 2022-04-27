@@ -2,21 +2,44 @@ package co.touchlab.xcode.cli.util
 
 import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Severity
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
+import platform.Foundation.*
+import platform.Foundation.NSURLSessionConfiguration.Companion.defaultSessionConfiguration
 
 class CrashHelper : LogWriter() {
     private val logEntries = mutableListOf<LogEntry>()
 
-    fun uploadPreviousCrashIfNeeded() {
-        if (needsUpload()) upload()
+    override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
+        logEntries.add(LogEntry(severity, message, tag, throwable))
     }
 
-    fun upload() {
-        // Remember to delete the crash report file on success...
+    fun upload(e: Throwable) {
+        upload(capture(e))
     }
 
-    fun capture(e: Throwable) {
-        deleteCrashReportFile()
+    private fun upload(crashReport: String) {
+        val url: NSURL = NSURL.URLWithString("http://localhost:5003/crash/report")!!
+        val request = NSMutableURLRequest.requestWithURL(url).apply {
+            setHTTPMethod("POST")
+            setValue("text/plain", "Content-Type")
+            setHTTPBody((crashReport as NSString).dataUsingEncoding(NSUTF8StringEncoding))
+        }
 
+        val uploadComplete = CompletableDeferred<Unit>()
+        val session = NSURLSession
+            .sessionWithConfiguration(defaultSessionConfiguration)
+            .dataTaskWithRequest(request) { _, _, _ ->
+                uploadComplete.complete(Unit)
+            }
+
+        runBlocking {
+            session.resume()
+            uploadComplete.await()
+        }
+    }
+
+    private fun capture(e: Throwable): String {
         var out = ""
 
         if (!logEntries.isEmpty()) {
@@ -30,26 +53,8 @@ class CrashHelper : LogWriter() {
         out += "FINAL CRASH\n===========\n\n"
         out += toStacktraceString(e)
 
-        crashReportFile().write(out.objc)
+        return out
     }
-
-    override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
-        logEntries.add(LogEntry(severity, message, tag, throwable))
-    }
-
-    private fun deleteCrashReportFile() {
-        try {
-            crashReportFile().delete()
-        } catch (e: Exception) {
-            // Do nothing
-        }
-    }
-
-    private fun needsUpload() =
-        crashReportFile().exists()
-
-    private fun crashReportFile() =
-        File(Path.workDir.appendingPathComponent("crash-report.txt"))
 
     data class LogEntry(val severity: Severity, val message: String, val tag: String, val throwable: Throwable?) {
         override fun toString(): String {

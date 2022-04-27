@@ -27,6 +27,7 @@ kotlin {
                 implementation(libs.kotlinx.cli)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.kermit)
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
         val macosMain by creating {

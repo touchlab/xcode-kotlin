@@ -12,7 +12,6 @@ import kotlinx.cli.ArgParser
 
 fun main(args: Array<String>) {
     val crashHelper = CrashHelper()
-    crashHelper.uploadPreviousCrashIfNeeded()
 
     try {
         val logWriters = if (args.contains("--log-console")) {
@@ -41,7 +40,6 @@ fun main(args: Array<String>) {
         parser.parse(adjustedArgs)
     } catch (e: Throwable) {
         Logger.e("Capturing global exception")
-        crashHelper.capture(e)
-        crashHelper.upload()
+        crashHelper.upload(e)
     }
 }
