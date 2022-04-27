@@ -1,13 +1,22 @@
 package co.touchlab.xcode.cli.command
 
+import co.touchlab.kermit.Logger
 import co.touchlab.xcode.cli.LLDBInitManager
 import co.touchlab.xcode.cli.LangSpecManager
 import co.touchlab.xcode.cli.PluginManager
 import co.touchlab.xcode.cli.util.Console
 
+@Suppress("DIVISION_BY_ZERO")
 class Info: BaseXcodeListSubcommand("info", "Shows information about the plugin") {
 
     override fun execute() = with(Console) {
+        Logger.i("Info::execute()")
+
+        // cause a crash
+        val a = 1
+        val b = 0
+        val c = a / b // maybe crash?
+
         val installedVersion = PluginManager.installedVersion
         val bundledVersion = PluginManager.bundledVersion
 
