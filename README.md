@@ -64,7 +64,7 @@ If properly set up, you should be able to add Kotlin source to Xcode, set up bre
 
 When you're done, your Xcode project structure should look something like this:
 
-<img src="https://tl-navigator-images.s3.us-east-1.amazonaws.com/docimages/2022-04-27_08-31-final.png" alt="final" style="zoom: 33%;" />
+![kotlinsources](https://tl-navigator-images.s3.us-east-1.amazonaws.com/docimages/2022-04-27_09-03-kotlinsources.png)
 
 ### Sample
 
