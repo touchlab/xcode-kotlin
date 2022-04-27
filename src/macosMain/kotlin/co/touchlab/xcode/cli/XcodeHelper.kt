@@ -19,10 +19,13 @@ object XcodeHelper {
     private val xcodeVersionRegex = Regex("(\\S+) \\((\\S+)\\)")
 
     fun ensureXcodeNotRunning() {
+        logger.v { "Checking if any Xcode runs." }
         val result = Shell.exec("/usr/bin/pgrep", "-xq", "--", xcodeProcessName)
         if (result.success) {
+            logger.v { "Found running Xcode instance." }
             val shutdown = Console.confirm("Xcode is running. Attempt to shut down? y/n: ")
             if (shutdown) {
+                logger.v { "Shutting down Xcode." }
                 Console.echo("Shutting down Xcode...")
                 Shell.exec("/usr/bin/pkill", "-x", xcodeProcessName).checkSuccessful {
                     "Couldn't shut down Xcode!"
@@ -31,6 +34,8 @@ object XcodeHelper {
                 Console.printError("Xcode needs to be closed!")
                 exit(1)
             }
+        } else {
+            logger.v { "No running Xcode found." }
         }
     }
 

@@ -1,5 +1,6 @@
 package co.touchlab.xcode.cli.util
 
+import co.touchlab.kermit.Logger
 import kotlinx.cinterop.ObjCObjectVar
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
@@ -117,9 +118,17 @@ class PropertyList(val root: Object) {
     class SerializationException(val error: NSError): Exception("Could not serialize property list. Error: ${error.description}.")
 
     companion object {
-        fun create(path: Path): PropertyList = create(File(path))
+        private val logger = Logger.withTag("PropertyList")
 
-        fun create(file: File): PropertyList = create(file.dataContents())
+        fun create(path: Path): PropertyList {
+            logger.v { "Loading property list from $path." }
+            return create(File(path).dataContents())
+        }
+
+        fun create(file: File): PropertyList {
+            logger.v { "Loading property list from file at ${file.path}" }
+            return create(file.dataContents())
+        }
 
         fun create(data: NSData): PropertyList {
             val rawPropertyList = memScoped {

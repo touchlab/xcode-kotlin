@@ -1,5 +1,6 @@
 package co.touchlab.xcode.cli
 
+import co.touchlab.kermit.Logger
 import co.touchlab.xcode.cli.util.Console
 import co.touchlab.xcode.cli.util.File
 import co.touchlab.xcode.cli.util.Path
@@ -16,6 +17,7 @@ object PluginManager {
     private val pluginTargetInfoFile = File(pluginTargetFile.path / "Contents" / "Info.plist")
     private val pluginVersionInfoKey = "CFBundleShortVersionString"
     private val pluginCompatibilityInfoKey = "DVTPlugInCompatibilityUUIDs"
+    private val logger = Logger.withTag("PluginManager")
 
     val bundledVersion: Version
         get() {
@@ -48,9 +50,8 @@ object PluginManager {
         }
 
     fun install(xcodes: List<XcodeHelper.XcodeInstallation>) {
-        // Copy plugin
+        logger.v { "Copying Xcode plugin to target path ${pluginTargetFile.path}" }
         pluginSourceFile.copy(pluginTargetFile.path)
-        // Repair plugin
         repair(xcodes)
     }
 
@@ -59,15 +60,17 @@ object PluginManager {
         if (isInstalled) {
             Console.echo("Repairing plugin compatibility list.")
             val additionalPluginCompatibilityIds = xcodes.map { PropertyList.Object.String(it.pluginCompatabilityId) }
+            logger.v { "Xcode installation IDs to include: ${additionalPluginCompatibilityIds.joinToString { it.value }}" }
             val infoPlist = PropertyList.create(pluginTargetInfoFile)
             val rootDictionary = infoPlist.root.dictionary
             val oldPluginCompatibilityIds = rootDictionary
                 .getOrPut(pluginCompatibilityInfoKey) { PropertyList.Object.Array(mutableListOf()) }
                 .array
+            logger.v { "Previous Xcode installation IDs: ${oldPluginCompatibilityIds.mapNotNull { it.stringOrNull?.value }.joinToString()}" }
             oldPluginCompatibilityIds.addAll(additionalPluginCompatibilityIds)
-            rootDictionary[pluginCompatibilityInfoKey] = PropertyList.Object.Array(
-                oldPluginCompatibilityIds.distinctBy { it.stringOrNull?.value }.toMutableList()
-            )
+            val distinctPluginCompatibilityIds = oldPluginCompatibilityIds.distinctBy { it.stringOrNull?.value }.toMutableList()
+            logger.v { "Xcode installation IDs to save: ${distinctPluginCompatibilityIds.mapNotNull { it.stringOrNull?.value }.joinToString()}" }
+            rootDictionary[pluginCompatibilityInfoKey] = PropertyList.Object.Array(distinctPluginCompatibilityIds)
             pluginTargetInfoFile.write(infoPlist.toData(PropertyList.Format.XML))
         } else {
             Console.echo("Plugin not installed, nothing to repair.")
@@ -75,6 +78,7 @@ object PluginManager {
     }
 
     fun uninstall() {
+        logger.i { "Deleting Xcode plugin from ${pluginTargetFile.path}" }
         pluginTargetFile.delete()
         XcodeHelper.removeKotlinPluginFromDefaults()
     }

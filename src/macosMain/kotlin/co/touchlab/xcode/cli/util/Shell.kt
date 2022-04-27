@@ -125,13 +125,13 @@ object Shell {
                     |${lazyMessage}. Task $task exited with code $status (reason $reason).
                     |
                     |Standard input:
-                    ${task.input?.let { NSString.create(data = it, encoding = NSUTF8StringEncoding) }?.kt?.lines()?.map { "|\t$it" } ?: ""}
+                    ${task.input?.let { NSString.create(data = it, encoding = NSUTF8StringEncoding) }?.kt?.lines()?.joinToString("\n") { "|\t$it" } ?: ""}
                     |
                     |Standard output:
-                    ${output?.lines()?.map { "|\t$it" } ?: ""}
+                    ${output?.lines()?.joinToString("\n") { "|\t$it" } ?: ""}
                     |
                     |Standard error:
-                    ${error?.lines()?.map { "|\t$it" } ?: ""}
+                    ${error?.lines()?.joinToString("\n") { "|\t$it" } ?: ""}
                 """.trimMargin()
             }
             return this

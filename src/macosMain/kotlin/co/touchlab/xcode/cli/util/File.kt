@@ -47,6 +47,10 @@ class File(val path: Path) {
         NSFileManager.defaultManager.removeItemAtPath(path.value, errorPointer.ptr)
     }
 
+    override fun toString(): String {
+        return "File($path)"
+    }
+
     private inline fun <T> throwingIOException(crossinline block: (ObjCObjectVar<NSError?>) -> T): T {
         return memScoped {
             val errorPointer: ObjCObjectVar<NSError?> = alloc()

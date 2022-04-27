@@ -1,5 +1,6 @@
 package co.touchlab.xcode.cli.command
 
+import co.touchlab.kermit.Logger
 import co.touchlab.xcode.cli.Installer
 import co.touchlab.xcode.cli.LLDBInitManager
 import co.touchlab.xcode.cli.LangSpecManager
@@ -16,10 +17,13 @@ import kotlinx.cli.vararg
 import kotlin.test.fail
 
 class Install: BaseXcodeListSubcommand("install", "Installs Xcode Kotlin plugin") {
-
     override fun execute() = with(Console) {
+        logger.v { "Running 'install' subcommand." }
+
         val bundledVersion = PluginManager.bundledVersion
+        logger.v { "Bundled plugin version = $bundledVersion" }
         val installedVersion = PluginManager.installedVersion
+        logger.v { "Installed plugin version = ${installedVersion ?: "N/A"}" }
 
         if (installedVersion != null) {
             val (confirmation, notification) = when {
@@ -36,6 +40,7 @@ class Install: BaseXcodeListSubcommand("install", "Installs Xcode Kotlin plugin"
             }
 
             if (confirm(confirmation)) {
+                logger.v { "Installation confirmed." }
                 echo(notification)
                 uninstall()
                 install()
@@ -52,5 +57,9 @@ class Install: BaseXcodeListSubcommand("install", "Installs Xcode Kotlin plugin"
 
     private fun uninstall() {
         Uninstaller.uninstallAll()
+    }
+
+    private companion object {
+        val logger = Logger.withTag("Install")
     }
 }

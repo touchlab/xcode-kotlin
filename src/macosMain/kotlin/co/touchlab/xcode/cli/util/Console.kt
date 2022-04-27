@@ -1,11 +1,15 @@
 package co.touchlab.xcode.cli.util
 
+import co.touchlab.kermit.Logger
 import platform.posix.fflush
 import platform.posix.fprintf
 import platform.posix.stderr
 
 object Console {
+    private val logger = Logger.withTag("Console")
+
     fun echo(text: String = "") {
+        logger.v { text }
         println(text)
     }
 
