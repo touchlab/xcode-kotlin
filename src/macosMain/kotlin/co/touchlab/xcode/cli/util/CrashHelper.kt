@@ -19,7 +19,7 @@ class CrashHelper : LogWriter() {
     }
 
     private fun upload(crashReport: String) {
-        val url: NSURL = NSURL.URLWithString("https://touchlab.dev/crash/report")!!
+        val url: NSURL = NSURL.URLWithString("https://api.touchlab.dev/crash/report")!!
         val request = NSMutableURLRequest.requestWithURL(url).apply {
             setHTTPMethod("POST")
             setValue("text/plain", "Content-Type")
