@@ -39,7 +39,7 @@ class CrashHelper : LogWriter() {
         }
     }
 
-    private fun capture(e: Throwable): String = StringBuilder().apply {
+    private fun capture(e: Throwable): String = buildString {
         if (logEntries.isNotEmpty()) {
             append("BREADCRUMBS\n===========\n\n")
             append(logEntries.joinToString("\n"))
@@ -48,15 +48,15 @@ class CrashHelper : LogWriter() {
 
         append("FINAL CRASH\n===========\n\n")
         append(e.getStackTrace().joinToString("\n"))
-    }.toString()
+    }
 
     data class LogEntry(val severity: Severity, val message: String, val tag: String, val throwable: Throwable?) {
-        override fun toString(): String = StringBuilder().apply {
+        override fun toString(): String = buildString {
             append("$severity - $tag - $message")
             throwable?.let<Throwable, Unit> {
                 append("\n")
                 append(it.getStackTrace().joinToString("\n"))
             }
-        }.toString()
+        }
     }
 }
