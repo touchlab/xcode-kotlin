@@ -39,38 +39,24 @@ class CrashHelper : LogWriter() {
         }
     }
 
-    private fun capture(e: Throwable): String {
-        var out = ""
-
-        if (!logEntries.isEmpty()) {
-            out += "BREADCRUMBS\n===========\n\n"
-            logEntries.forEach {
-                out += it.toString() + "\n"
-            }
-            out += "\n\n"
+    private fun capture(e: Throwable): String = StringBuilder().apply {
+        if (logEntries.isNotEmpty()) {
+            append("BREADCRUMBS\n===========\n\n")
+            append(logEntries.joinToString("\n"))
+            append("\n\n")
         }
 
-        out += "FINAL CRASH\n===========\n\n"
-        out += toStacktraceString(e)
-
-        return out
-    }
+        append("FINAL CRASH\n===========\n\n")
+        append(e.getStackTrace().joinToString("\n"))
+    }.toString()
 
     data class LogEntry(val severity: Severity, val message: String, val tag: String, val throwable: Throwable?) {
-        override fun toString(): String {
-            var out = "$severity - $tag - $message"
-            throwable?.let {
-                out += "\n${toStacktraceString(it)}"
+        override fun toString(): String = StringBuilder().apply {
+            append("$severity - $tag - $message")
+            throwable?.let<Throwable, Unit> {
+                append("\n")
+                append(it.getStackTrace().joinToString("\n"))
             }
-            return out
-        }
+        }.toString()
     }
-}
-
-private fun toStacktraceString(e: Throwable): String {
-    var stacktrace = ""
-    e.getStackTrace().forEach {
-        stacktrace += it + "\n"
-    }
-    return stacktrace
 }
