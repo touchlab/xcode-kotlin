@@ -6,6 +6,7 @@ import platform.Foundation.NSHomeDirectory
 import platform.Foundation.NSString
 import platform.Foundation.stringByAppendingPathComponent
 import platform.Foundation.stringByDeletingLastPathComponent
+import platform.Foundation.stringByResolvingSymlinksInPath
 
 data class Path(
     val value: String,
@@ -31,19 +32,23 @@ data class Path(
         return Path(value.deletingLastPathComponent())
     }
 
+    fun resolvingSymlinksInPath(): Path {
+        return Path(value.resolvingSymlinksInPath())
+    }
+
     override fun toString(): String {
         return value
     }
 
     companion object {
         val home: Path
-            get() = Path(NSHomeDirectory())
+            get() = Path(NSHomeDirectory().resolvingSymlinksInPath())
 
         val workDir: Path
-            get() = Path(NSFileManager.defaultManager.currentDirectoryPath)
+            get() = Path(NSFileManager.defaultManager.currentDirectoryPath.resolvingSymlinksInPath())
 
         val binaryDir: Path
-            get() = Path(NSBundle.mainBundle.bundlePath)
+            get() = Path(NSBundle.mainBundle.bundlePath.resolvingSymlinksInPath())
 
         val dataDir: Path
             get() = if (Platform.isDebugBinary) {
@@ -60,6 +65,10 @@ data class Path(
 
         private fun String.deletingLastPathComponent(): String {
             return this.objc.stringByDeletingLastPathComponent()
+        }
+
+        private fun String.resolvingSymlinksInPath(): String {
+            return this.objc.stringByResolvingSymlinksInPath()
         }
     }
 }
