@@ -49,17 +49,17 @@ object PluginManager {
             emptyList()
         }
 
-    fun install(xcodes: List<XcodeHelper.XcodeInstallation>) {
+    fun install(xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
         logger.v { "Copying Xcode plugin to target path ${pluginTargetFile.path}" }
         pluginSourceFile.copy(pluginTargetFile.path)
-        repair(xcodes)
+        repair(xcodeInstallations)
     }
 
-    fun repair(xcodes: List<XcodeHelper.XcodeInstallation>) {
+    fun repair(xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
         XcodeHelper.removeKotlinPluginFromDefaults()
         if (isInstalled) {
             Console.echo("Repairing plugin compatibility list.")
-            val additionalPluginCompatibilityIds = xcodes.map { PropertyList.Object.String(it.pluginCompatabilityId) }
+            val additionalPluginCompatibilityIds = xcodeInstallations.map { PropertyList.Object.String(it.pluginCompatabilityId) }
             logger.v { "Xcode installation IDs to include: ${additionalPluginCompatibilityIds.joinToString { it.value }}" }
             val infoPlist = PropertyList.create(pluginTargetInfoFile)
             val rootDictionary = infoPlist.root.dictionary

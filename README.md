@@ -86,7 +86,7 @@ If it doesn't fix the issue, run:
 xcode-kotlin info
 ```
 
-This will show you status of the plugin and a list of found Xcodes. If the Xcode you want to use isn't listed you can run the `repair` command and provide it with paths to Xcodes to add support for:
+This will show you status of the plugin and a list of found Xcode installations. If the Xcode you want to use isn't listed you can run the `repair` command and provide it with paths to Xcode installations to add support for:
 
 ```
 xcode-kotlin repair /Volumes/ExternalVolume1/Xcode.app

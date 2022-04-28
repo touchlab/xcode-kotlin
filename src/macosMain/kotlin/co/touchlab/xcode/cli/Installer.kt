@@ -1,12 +1,10 @@
 package co.touchlab.xcode.cli
 
-import co.touchlab.xcode.cli.util.Path
-
 object Installer {
-    fun installAll(xcodes: List<XcodeHelper.XcodeInstallation>) {
+    fun installAll(xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
         XcodeHelper.ensureXcodeNotRunning()
 
-        PluginManager.install(xcodes)
+        PluginManager.install(xcodeInstallations)
         LangSpecManager.install()
         LLDBInitManager.install()
     }

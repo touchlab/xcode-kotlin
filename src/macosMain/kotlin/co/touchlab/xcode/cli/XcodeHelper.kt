@@ -39,7 +39,7 @@ object XcodeHelper {
         }
     }
 
-    fun installedXcodes(): List<XcodeInstallation> {
+    fun allXcodeInstallations(): List<XcodeInstallation> {
         val result = Shell.exec("/usr/sbin/system_profiler", "-json", "SPDeveloperToolsDataType").checkSuccessful {
             "Couldn't get list of installed developer tools."
         }

@@ -36,13 +36,13 @@ class Info: BaseXcodeListSubcommand("info", "Shows information about the plugin"
         echo("LLDB init installed: $lldbInstalledString")
         echo("LLDB Xcode init sources main LLDB init: ${LLDBInitManager.sourcesMainLlvmInit.humanReadable}")
 
-        val xcodes = xcodeInstallations()
-        if (xcodes.isNotEmpty()) {
+        val xcodeInstallations = xcodeInstallations()
+        if (xcodeInstallations.isNotEmpty()) {
             val supportedXcodeUuids = PluginManager.targetSupportedXcodeUUIds.toSet()
             echo()
-            echo("Installed Xcodes:")
-            val longestNameLength = xcodes.maxOf { it.name.length }
-            for (install in xcodes) {
+            echo("Installed Xcode versions:")
+            val longestNameLength = xcodeInstallations.maxOf { it.name.length }
+            for (install in xcodeInstallations) {
                 val spacesAfterName = (1..(longestNameLength - install.name.length)).joinToString(separator = "") { " " }
                 val compatibilityMark = if (supportedXcodeUuids.contains(install.pluginCompatabilityId)) "✔" else "x"
                 echo("$compatibilityMark\t${install.name}$spacesAfterName\t${install.pluginCompatabilityId}\t${install.path}")
@@ -50,7 +50,7 @@ class Info: BaseXcodeListSubcommand("info", "Shows information about the plugin"
 
             echo()
             echo("✔ - plugin is compatible, x - plugin is not compatible")
-            echo("Run 'xcode-kotlin repair' to add compatibility for all listed Xcodes.")
+            echo("Run 'xcode-kotlin repair' to add compatibility for all listed Xcode versions.")
         }
     }
 
