@@ -7,31 +7,53 @@ import co.touchlab.xcode.cli.command.Info
 import co.touchlab.xcode.cli.command.Install
 import co.touchlab.xcode.cli.command.Repair
 import co.touchlab.xcode.cli.command.Uninstall
+import co.touchlab.xcode.cli.util.Console
+import co.touchlab.xcode.cli.util.CrashHelper
 import kotlinx.cli.ArgParser
+import platform.posix.exit
 
 fun main(args: Array<String>) {
-    val logWriters = if (args.contains("--log-console")) {
-        listOf(platformLogWriter(), CommonWriter())
-    } else {
-        listOf(platformLogWriter())
+    val crashHelper = CrashHelper()
+
+    try {
+        val logWriters = if (args.contains("--log-console")) {
+            listOf(platformLogWriter(), CommonWriter(), crashHelper)
+        } else {
+            listOf(platformLogWriter(), crashHelper)
+        }
+
+        Logger.setLogWriters(logWriters)
+        Logger.v { "Running xcode-cli with arguments: ${args.joinToString()}" }
+
+        // If no arguments were given, we want to show help.
+        val adjustedArgs = if (args.isEmpty()) {
+            arrayOf("-h")
+        } else {
+            args.filter { it != "--log-console" }.toTypedArray()
+        }
+        val parser = ArgParser("xcode-kotlin")
+        parser.subcommands(
+            Install(),
+            Uninstall(),
+            Repair(),
+            Info(),
+        )
+
+        parser.parse(adjustedArgs)
+    } catch (e: Throwable) {
+        if (Console.confirm("xcode-kotlin has crashed, do you want to upload the crash report to Touchlab?: ")) {
+            Console.echo("Uploading crash report.")
+            try {
+                crashHelper.upload(e)
+                Console.echo("Upload successful")
+                exit(1)
+            } catch (uploadException: Throwable) {
+                Console.printError("Uploading crash report failed!")
+                // e.addSupressed(uploadException)
+                throw e
+            }
+        } else {
+            throw e
+        }
     }
-
-    Logger.setLogWriters(logWriters)
-    Logger.v { "Running xcode-cli with arguments: ${args.joinToString()}" }
-
-    // If no arguments were given, we want to show help.
-    val adjustedArgs = if (args.isEmpty()) {
-        arrayOf("-h")
-    } else {
-        args.filter { it != "--log-console" }.toTypedArray()
-    }
-    val parser = ArgParser("xcode-kotlin")
-    parser.subcommands(
-        Install(),
-        Uninstall(),
-        Repair(),
-        Info(),
-    )
-
-    parser.parse(adjustedArgs)
 }
