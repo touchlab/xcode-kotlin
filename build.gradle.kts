@@ -1,12 +1,14 @@
 @file:Suppress("UnstableApiUsage")
 
+import org.apache.tools.ant.filters.ReplaceTokens
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.plugin.serialization)
 }
 
 group = "co.touchlab"
-version = "1.0-SNAPSHOT"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
@@ -67,4 +69,20 @@ tasks.register<Exec>("assembleReleaseExecutableMacos") {
     workingDir = buildDir
     group = "build"
     description = "Builds an universal macOS binary for both x86_64 and arm64 architectures."
+}
+
+tasks.register<Copy>("preparePlugin") {
+    group = "build"
+    description = "Prepares plugin and language specification to build dir."
+
+    from(layout.projectDirectory.dir("data")) {
+        include("Kotlin.ideplugin/**", "Kotlin.xclangspec")
+        filter(
+            ReplaceTokens::class,
+            "tokens" to mapOf(
+                "version" to version,
+            )
+        )
+    }
+    into(layout.buildDirectory.dir("share"))
 }
