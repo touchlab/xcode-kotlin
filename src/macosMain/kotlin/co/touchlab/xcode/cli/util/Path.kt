@@ -47,8 +47,8 @@ data class Path(
 
         val dataDir: Path
             get() = if (Platform.isDebugBinary) {
-                // TODO: This requires running the debug binary with working directory set to the project's root.
-                workDir / "data"
+                // TODO: This requires running the debug binary with working directory set to the project's root after running `./gradlew preparePlugin`.
+                workDir / "build" / "share"
             } else {
                 // TODO: This will only be true when installing through Homebrew. Do we want to have different configurations?
                 binaryDir.parent / "share"
