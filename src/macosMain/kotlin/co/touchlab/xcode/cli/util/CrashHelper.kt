@@ -23,14 +23,18 @@ class CrashHelper : LogWriter() {
         val request = NSMutableURLRequest.requestWithURL(url).apply {
             setHTTPMethod("POST")
             setValue("text/plain", "Content-Type")
-            setHTTPBody((crashReport as NSString).dataUsingEncoding(NSUTF8StringEncoding))
+            setHTTPBody(crashReport.objc.dataUsingEncoding(NSUTF8StringEncoding))
         }
 
         val uploadComplete = CompletableDeferred<Unit>()
         val session = NSURLSession
             .sessionWithConfiguration(defaultSessionConfiguration)
-            .dataTaskWithRequest(request) { _, _, _ ->
+            .dataTaskWithRequest(request) { _, _, error ->
+                if (error != null) {
+                    uploadComplete.completeExceptionally(CrashReportUploadException(error))
+                } else {
                 uploadComplete.complete(Unit)
+            }
             }
 
         runBlocking {
@@ -59,4 +63,6 @@ class CrashHelper : LogWriter() {
             }
         }
     }
+
+    class CrashReportUploadException(val error: NSError): Exception("Crash report upload failed: ${error.localizedDescription}")
 }

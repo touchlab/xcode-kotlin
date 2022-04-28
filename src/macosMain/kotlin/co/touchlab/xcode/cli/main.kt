@@ -49,7 +49,7 @@ fun main(args: Array<String>) {
                 exit(1)
             } catch (uploadException: Throwable) {
                 Console.printError("Uploading crash report failed!")
-                // e.addSupressed(uploadException)
+                e.addSuppressed(uploadException)
                 throw e
             }
         } else {
