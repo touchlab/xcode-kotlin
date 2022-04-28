@@ -2,9 +2,11 @@
 
 For advanced users, or if you have issues, you may want to install manually. There are 2 parts to Kotlin support: 1) debugging support and 2) language color and style formatting.
 
-You need to tell Xcode that `*.kt` files are source files, and run an lldb formatter script when debugging starts. Look at the `setup.sh` script in the `legacy` directory and see the folders where those parts go.
+Look at the [legacy branch](https://github.com/touchlab/xcode-kotlin/tree/legacy) in the `xcode-kotlin` Github repo to see the original install script `setup.sh`. You'll see the folders that the parts of the Xcode plugin need to be copied into.
 
-*NOTE:* The `setup.sh` script in the legacy folder is not runnable. It exists only for reference.
+If the Xcode version is newer than 13.3, you'll likely need to find and append the UUID for that version to the `Info.plist` file.
+
+See the next section, [Xcode Updates](#xcode-updates), for instructions on getting the UUID. See [this merged PR](https://github.com/touchlab/xcode-kotlin/pull/46/files) for an example of appending the UUID to the `Info.plist` file.
 
 ## Xcode Updates
 
