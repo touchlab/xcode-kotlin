@@ -3,6 +3,7 @@ package co.touchlab.xcode.cli
 import co.touchlab.kermit.Logger
 import co.touchlab.xcode.cli.util.BackupHelper
 import co.touchlab.xcode.cli.util.Console
+import co.touchlab.xcode.cli.util.File
 import co.touchlab.xcode.cli.util.Path
 import co.touchlab.xcode.cli.util.PropertyList
 import co.touchlab.xcode.cli.util.Shell
@@ -59,6 +60,8 @@ object XcodeHelper {
     }
 
     fun installationAt(path: Path): XcodeInstallation {
+        val xcodeFile = File(path)
+        require(xcodeFile.exists()) { "Path $path doesn't exist!" }
         val xcodeInfoPath = path / "Contents" / "Info"
         val versionResult = Shell.exec("/usr/bin/defaults", "read", xcodeInfoPath.value, "CFBundleShortVersionString")
             .checkSuccessful {
