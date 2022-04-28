@@ -16,7 +16,8 @@ The CLI (command line interface) is an executable that is installed on your mach
 
 - Homebrew installation
 - Easier management of multiple Xcode installations
-- Automatic "repair". When Xcode updates, we need to update the plugin config. This previously required updating the `xcode-kotlin` project repo, and pulling locally. The CLI can do this automatically.
+- Automatic "repair". When Xcode updates, we need to update the plugin config. This previously required updating the `xcode-kotlin` project GIthub repo, pulling, and reinstalling. The CLI can do this locally.
+- Better diagnostic info and support for install issues.
 
 ### Xcode Plugin
 
