@@ -7,8 +7,10 @@ import co.touchlab.xcode.cli.command.Info
 import co.touchlab.xcode.cli.command.Install
 import co.touchlab.xcode.cli.command.Repair
 import co.touchlab.xcode.cli.command.Uninstall
+import co.touchlab.xcode.cli.util.Console
 import co.touchlab.xcode.cli.util.CrashHelper
 import kotlinx.cli.ArgParser
+import platform.posix.exit
 
 fun main(args: Array<String>) {
     val crashHelper = CrashHelper()
@@ -39,7 +41,19 @@ fun main(args: Array<String>) {
 
         parser.parse(adjustedArgs)
     } catch (e: Throwable) {
-        Logger.e("Capturing global exception")
-        crashHelper.upload(e)
+        if (Console.confirm("xcode-kotlin has crashed, do you want to upload the crash report to Touchlab?: ")) {
+            Console.echo("Uploading crash report.")
+            try {
+                crashHelper.upload(e)
+                Console.echo("Upload successful")
+                exit(1)
+            } catch (uploadException: Throwable) {
+                Console.printError("Uploading crash report failed!")
+                // e.addSupressed(uploadException)
+                throw e
+            }
+        } else {
+            throw e
+        }
     }
 }
