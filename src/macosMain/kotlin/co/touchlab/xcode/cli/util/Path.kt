@@ -42,13 +42,13 @@ data class Path(
 
     companion object {
         val home: Path
-            get() = Path(NSHomeDirectory().resolvingSymlinksInPath())
+            get() = Path(NSHomeDirectory())
 
         val workDir: Path
-            get() = Path(NSFileManager.defaultManager.currentDirectoryPath.resolvingSymlinksInPath())
+            get() = Path(NSFileManager.defaultManager.currentDirectoryPath)
 
         val binaryDir: Path
-            get() = Path(NSBundle.mainBundle.bundlePath.resolvingSymlinksInPath())
+            get() = Path(NSBundle.mainBundle.bundlePath)
 
         val dataDir: Path
             get() = if (Platform.isDebugBinary) {

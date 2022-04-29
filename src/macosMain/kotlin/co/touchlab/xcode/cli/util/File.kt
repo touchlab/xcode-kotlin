@@ -15,7 +15,13 @@ import platform.Foundation.NSUTF8StringEncoding
 import platform.Foundation.create
 import platform.Foundation.writeToFile
 
-class File(val path: Path) {
+class File(private val providedPath: Path, private val resolveSymlinks: Boolean = true) {
+    val path: Path
+        get() = if (resolveSymlinks) {
+            providedPath.resolvingSymlinksInPath()
+        } else {
+            providedPath
+        }
 
     fun dataContents(): NSData = throwingIOException { errorPointer ->
         NSData.create(contentsOfFile = path.value, options = 0, error = errorPointer.ptr)
