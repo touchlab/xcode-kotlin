@@ -16,7 +16,7 @@ The CLI (command line interface) is an executable that is installed on your mach
 
 - Homebrew installation
 - Easier management of multiple Xcode installations
-- Automatic "repair". When Xcode updates, we need to update the plugin config. This previously required updating the `xcode-kotlin` project GIthub repo, pulling, and reinstalling. The CLI can do this locally.
+- Automatic "sync". When Xcode updates, we need to update the plugin config. This previously required updating the `xcode-kotlin` project GitHub repo, pulling, and reinstalling. The CLI can do this locally.
 - Better diagnostic info and support for install issues.
 
 ### Xcode Plugin
@@ -43,12 +43,12 @@ This will install the plugin with support for all of your currently installed Xc
 
 If needed, you can install manually. See [MANUAL_INSTALL](MANUAL_INSTALL.md).
 
-## Repair
+## Sync
 
 When you update Xcode versions, you'll need to enable the plugin for that version. Run:
 
 ```shell
-xcode-kotlin repair
+xcode-kotlin sync
 ```
 
 This process adds the UUID for the new Xcode version to the local plugin configuration. For users familiar with earlier versions of `xcode-kotlin`, Xcode updates would previously require an [update from GitHub](https://github.com/touchlab/xcode-kotlin/pull/37/files).
@@ -86,10 +86,10 @@ If it doesn't fix the issue, run:
 xcode-kotlin info
 ```
 
-This will show you status of the plugin and a list of found Xcode installations. If the Xcode you want to use isn't listed you can run the `repair` command and provide it with paths to Xcode installations to add support for:
+This will show you status of the plugin and a list of found Xcode installations. If the Xcode you want to use isn't listed you can run the `sync` command and provide it with paths to Xcode installations to add support for:
 
 ```
-xcode-kotlin repair /Volumes/ExternalVolume1/Xcode.app
+xcode-kotlin sync /Volumes/ExternalVolume1/Xcode.app
 ```
 
 If the issue still persists, open a new GitHub issue and include the output of the `info` command.

@@ -5,7 +5,7 @@ import co.touchlab.kermit.Logger
 import co.touchlab.kermit.platformLogWriter
 import co.touchlab.xcode.cli.command.Info
 import co.touchlab.xcode.cli.command.Install
-import co.touchlab.xcode.cli.command.Repair
+import co.touchlab.xcode.cli.command.Sync
 import co.touchlab.xcode.cli.command.Uninstall
 import co.touchlab.xcode.cli.util.Console
 import co.touchlab.xcode.cli.util.CrashHelper
@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
         parser.subcommands(
             Install(),
             Uninstall(),
-            Repair(),
+            Sync(),
             Info(),
         )
 

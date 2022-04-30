@@ -50,7 +50,7 @@ class Info: BaseXcodeListSubcommand("info", "Shows information about the plugin"
 
             echo()
             echo("✔ - plugin is compatible, x - plugin is not compatible")
-            echo("Run 'xcode-kotlin repair' to add compatibility for all listed Xcode versions.")
+            echo("Run 'xcode-kotlin sync' to add compatibility for all listed Xcode versions.")
         }
     }
 
