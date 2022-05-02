@@ -58,6 +58,7 @@ object PluginManager {
     fun sync(xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
         XcodeHelper.removeKotlinPluginFromDefaults()
         if (isInstalled) {
+            XcodeHelper.addKotlinPluginToDefaults(installedVersion ?: bundledVersion, xcodeInstallations)
             Console.echo("Synchronizing plugin compatibility list.")
             val additionalPluginCompatibilityIds = xcodeInstallations.map { PropertyList.Object.String(it.pluginCompatabilityId) }
             logger.v { "Xcode installation IDs to include: ${additionalPluginCompatibilityIds.joinToString { it.value }}" }

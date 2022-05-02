@@ -51,11 +51,11 @@ class PropertyList(val root: Object) {
         val numberOrNull: Number? get() = this as? Number
 
         class Array(
-            val items: MutableList<Object>
+            val items: MutableList<Object> = mutableListOf(),
         ): Object, MutableList<Object> by items
 
         class Dictionary(
-            val items: MutableMap<kotlin.String, Object>,
+            val items: MutableMap<kotlin.String, Object> = mutableMapOf(),
         ): Object, MutableMap<kotlin.String, Object> by items
 
         class String(

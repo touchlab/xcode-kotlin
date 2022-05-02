@@ -92,20 +92,48 @@ object XcodeHelper {
         )
     }
 
+    fun addKotlinPluginToDefaults(pluginVersion: KotlinVersion, xcodeInstallations: List<XcodeInstallation>) {
+        logger.i { "Adding plugin to allowed list in Xcode defaults." }
+        modifyingXcodeDefaults("BeforeAdd") {
+            val rootDictionary = root.dictionaryOrNull ?: return
+            for (installation in xcodeInstallations) {
+                rootDictionary.getOrPut("DVTPlugInManagerNonApplePlugIns-Xcode-${installation.version}") {
+                    PropertyList.Object.Dictionary(
+                        mutableMapOf(
+                            "allowed" to PropertyList.Object.Dictionary(),
+                            "skipped" to PropertyList.Object.Dictionary(),
+                        )
+                    )
+                }.dictionary.getOrPut("allowed") { PropertyList.Object.Dictionary() }.dictionary["org.kotlinlang.xcode.kotlin"] =
+                    PropertyList.Object.Dictionary(
+                        mutableMapOf(
+                            "version" to PropertyList.Object.String(pluginVersion.toString())
+                        )
+                    )
+            }
+        }
+    }
+
     fun removeKotlinPluginFromDefaults() {
         logger.i { "Removing plugin from allowed/skipped list in Xcode defaults." }
-        val backupPath = BackupHelper.backupPath("XcodeDefaults.plist")
+        modifyingXcodeDefaults("BeforeRemove") {
+            val rootDictionary = root.dictionaryOrNull ?: return
+            val nonApplePlugInsKeys = rootDictionary.keys.filter { it.startsWith("DVTPlugInManagerNonApplePlugIns-Xcode-") }
+            nonApplePlugInsKeys.forEach { key ->
+                rootDictionary[key]?.dictionaryOrNull?.get("allowed")?.dictionaryOrNull?.remove("org.kotlinlang.xcode.kotlin")
+                rootDictionary[key]?.dictionaryOrNull?.get("skipped")?.dictionaryOrNull?.remove("org.kotlinlang.xcode.kotlin")
+            }
+        }
+    }
+
+    private inline fun modifyingXcodeDefaults(backupTag: String, modify: PropertyList.() -> Unit) {
+        val backupPath = BackupHelper.backupPath("XcodeDefaults_$backupTag.plist")
         logger.i { "Saving a backup of com.apple.dt.Xcode defaults to `$backupPath`" }
         Shell.exec("/usr/bin/defaults", "export", "com.apple.dt.Xcode", backupPath.value).checkSuccessful {
             "Couldn't export Xcode defaults."
         }
         val defaultsPlist = PropertyList.create(backupPath)
-        val rootDictionary = defaultsPlist.root.dictionaryOrNull ?: return
-        val nonApplePlugInsKeys = rootDictionary.keys.filter { it.startsWith("DVTPlugInManagerNonApplePlugIns-Xcode-") }
-        nonApplePlugInsKeys.forEach { key ->
-            rootDictionary[key]?.dictionaryOrNull?.get("allowed")?.dictionaryOrNull?.remove("org.kotlinlang.xcode.kotlin")
-            rootDictionary[key]?.dictionaryOrNull?.get("skipped")?.dictionaryOrNull?.remove("org.kotlinlang.xcode.kotlin")
-        }
+        defaultsPlist.modify()
         val newPlistData = defaultsPlist.toData(PropertyList.Format.XML)
         Shell.exec("/usr/bin/defaults", "import", "com.apple.dt.Xcode", "-", input = newPlistData).checkSuccessful {
             "Couldn't import new Xcode defaults."
