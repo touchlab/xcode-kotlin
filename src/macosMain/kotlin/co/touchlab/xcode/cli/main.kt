@@ -41,7 +41,7 @@ fun main(args: Array<String>) {
 
         parser.parse(adjustedArgs)
     } catch (e: Throwable) {
-        if (Console.confirm("xcode-kotlin has crashed, do you want to upload the crash report to Touchlab?: ")) {
+        if (Console.confirm("xcode-kotlin has crashed, do you want to upload the crash report to Touchlab? y/n: ")) {
             Console.echo("Uploading crash report.")
             try {
                 crashHelper.upload(e)

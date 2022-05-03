@@ -28,13 +28,13 @@ class Install: BaseXcodeListSubcommand("install", "Installs Xcode Kotlin plugin"
         if (installedVersion != null) {
             val (confirmation, notification) = when {
                 bundledVersion > installedVersion -> {
-                    "Do you want to update from $installedVersion to $bundledVersion?: " to "Updating to $bundledVersion"
+                    "Do you want to update from $installedVersion to $bundledVersion? y/n: " to "Updating to $bundledVersion"
                 }
                 bundledVersion == installedVersion -> {
-                    "Do you want to reinstall version $installedVersion?: " to "Reinstalling $installedVersion"
+                    "Do you want to reinstall version $installedVersion? y/n: " to "Reinstalling $installedVersion"
                 }
                 bundledVersion < installedVersion -> {
-                    "Do you want to downgrade from $installedVersion to $bundledVersion?: " to "Downgrading to $bundledVersion"
+                    "Do you want to downgrade from $installedVersion to $bundledVersion? y/n: " to "Downgrading to $bundledVersion"
                 }
                 else -> error("Unhandled comparison possibility!")
             }

@@ -46,7 +46,7 @@ object LLDBInitManager {
                     This installer will create a new file at '~/.lldbinit-Xcode'. This file takes precedence over the '~/.lldbinit' file. 
                     To keep using configuration from '~/.lldbinit' file, it needs to be sourced by the newly created '~/.lldbinit-Xcode' file.
                 """.trimIndent())
-                if (Console.confirm("Do you want to source the '~/.lldbinit' file?: ")) {
+                if (Console.confirm("Do you want to source the '~/.lldbinit' file? y/n: ")) {
                     logger.v { "Will source ~/.lldbinit." }
                     sourceMainLlvmInit
                 } else {

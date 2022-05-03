@@ -34,7 +34,6 @@ object Console {
             print(text)
         }
         return readLine()
-
     }
 
     fun printError(message: String) {
