@@ -95,21 +95,8 @@ object XcodeHelper {
     fun addKotlinPluginToDefaults(pluginVersion: KotlinVersion, xcodeInstallations: List<XcodeInstallation>) {
         logger.i { "Adding plugin to allowed list in Xcode defaults." }
         modifyingXcodeDefaults("BeforeAdd") {
-            val rootDictionary = root.dictionaryOrNull ?: return
             for (installation in xcodeInstallations) {
-                rootDictionary.getOrPut("DVTPlugInManagerNonApplePlugIns-Xcode-${installation.version}") {
-                    PropertyList.Object.Dictionary(
-                        mutableMapOf(
-                            "allowed" to PropertyList.Object.Dictionary(),
-                            "skipped" to PropertyList.Object.Dictionary(),
-                        )
-                    )
-                }.dictionary.getOrPut("allowed") { PropertyList.Object.Dictionary() }.dictionary["org.kotlinlang.xcode.kotlin"] =
-                    PropertyList.Object.Dictionary(
-                        mutableMapOf(
-                            "version" to PropertyList.Object.String(pluginVersion.toString())
-                        )
-                    )
+                it.nonApplePlugins(installation.version).allowed.add(xcodeKotlinBundleId, pluginVersion.toString())
             }
         }
     }
@@ -117,23 +104,21 @@ object XcodeHelper {
     fun removeKotlinPluginFromDefaults() {
         logger.i { "Removing plugin from allowed/skipped list in Xcode defaults." }
         modifyingXcodeDefaults("BeforeRemove") {
-            val rootDictionary = root.dictionaryOrNull ?: return
-            val nonApplePlugInsKeys = rootDictionary.keys.filter { it.startsWith("DVTPlugInManagerNonApplePlugIns-Xcode-") }
-            nonApplePlugInsKeys.forEach { key ->
-                rootDictionary[key]?.dictionaryOrNull?.get("allowed")?.dictionaryOrNull?.remove("org.kotlinlang.xcode.kotlin")
-                rootDictionary[key]?.dictionaryOrNull?.get("skipped")?.dictionaryOrNull?.remove("org.kotlinlang.xcode.kotlin")
+            it.allNonApplePlugins().forEach {
+                it.allowed.remove(xcodeKotlinBundleId)
+                it.skipped.remove(xcodeKotlinBundleId)
             }
         }
     }
 
-    private inline fun modifyingXcodeDefaults(backupTag: String, modify: PropertyList.() -> Unit) {
+    private inline fun modifyingXcodeDefaults(backupTag: String, modify: Defaults.(PropertyList) -> Unit) {
         val backupPath = BackupHelper.backupPath("XcodeDefaults_$backupTag.plist")
         logger.i { "Saving a backup of com.apple.dt.Xcode defaults to `$backupPath`" }
         Shell.exec("/usr/bin/defaults", "export", "com.apple.dt.Xcode", backupPath.value).checkSuccessful {
             "Couldn't export Xcode defaults."
         }
         val defaultsPlist = PropertyList.create(backupPath)
-        defaultsPlist.modify()
+        Defaults.modify(defaultsPlist)
         val newPlistData = defaultsPlist.toData(PropertyList.Format.XML)
         Shell.exec("/usr/bin/defaults", "import", "com.apple.dt.Xcode", "-", input = newPlistData).checkSuccessful {
             "Couldn't import new Xcode defaults."
@@ -161,5 +146,54 @@ object XcodeHelper {
             @SerialName("spdevtools_version")
             val version: String,
         )
+    }
+
+    private object Defaults {
+        val xcodeKotlinBundleId = "org.kotlinlang.xcode.kotlin"
+        private val nonApplePluginsKeyPrefix = "DVTPlugInManagerNonApplePlugIns-Xcode-"
+
+        fun PropertyList.allNonApplePlugins(): List<NonApplePlugins> {
+            return root.dictionary.filter { (key, _) -> key.startsWith(nonApplePluginsKeyPrefix) }.map { (_, value) ->
+                NonApplePlugins(value.dictionary)
+            }
+        }
+        fun PropertyList.nonApplePlugins(xcodeVersion: String): NonApplePlugins {
+            val backingDictionary = root.dictionary.getOrPut(nonApplePluginsKeyPrefix + xcodeVersion) {
+                PropertyList.Object.Dictionary(
+                    mutableMapOf(
+                        "allowed" to PropertyList.Object.Dictionary(),
+                        "skipped" to PropertyList.Object.Dictionary(),
+                    )
+                )
+            }.dictionary
+            return NonApplePlugins(backingDictionary)
+        }
+
+        class NonApplePlugins(private val backingDictionary: PropertyList.Object.Dictionary) {
+            val allowed: PluginEntries
+                get() = entries("allowed")
+            val skipped: PluginEntries
+                get() = entries("skipped")
+
+            private fun entries(key: String): PluginEntries {
+                return PluginEntries(
+                    backingDictionary.getOrPut(key) { PropertyList.Object.Dictionary() }.dictionary
+                )
+            }
+
+            class PluginEntries(private val backingDictionary: PropertyList.Object.Dictionary) {
+                fun add(bundleId: String, version: String) {
+                    backingDictionary[bundleId] = PropertyList.Object.Dictionary(
+                        mutableMapOf(
+                            "version" to PropertyList.Object.String(version)
+                        )
+                    )
+                }
+
+                fun remove(bundleId: String) {
+                    backingDictionary.remove(bundleId)
+                }
+            }
+        }
     }
 }
