@@ -49,8 +49,13 @@ class File(private val providedPath: Path, private val resolveSymlinks: Boolean 
         NSFileManager.defaultManager.createDirectoryAtPath(path.value, true, null, errorPointer.ptr)
     }
 
-    fun delete(): Boolean = throwingIOException { errorPointer ->
-        NSFileManager.defaultManager.removeItemAtPath(path.value, errorPointer.ptr)
+    fun delete(): Boolean {
+        if (!exists()) {
+            return false
+        }
+        return throwingIOException { errorPointer ->
+            NSFileManager.defaultManager.removeItemAtPath(path.value, errorPointer.ptr)
+        }
     }
 
     override fun toString(): String {
