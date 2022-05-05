@@ -2,7 +2,13 @@
 
 For advanced users, or if you have issues, you may want to install manually. There are 2 parts to Kotlin support: 1) debugging support and 2) language color and style formatting.
 
-Look at the [legacy branch](https://github.com/touchlab/xcode-kotlin/tree/legacy) in the `xcode-kotlin` Github repo to see the original install script `setup.sh`. You'll see the folders that the parts of the Xcode plugin need to be copied into.
+To follow the original install process, [clone the repo](https://github.com/touchlab/xcode-kotlin) and check out the [legacy branch](https://github.com/touchlab/xcode-kotlin/tree/legacy). You can follow the README instructions there. Basically, run:
+
+```shell
+./setup.sh
+```
+
+Alternatively, to manually install, you can follow the steps in  `setup.sh`. You'll see the folders that the parts of the Xcode plugin need to be copied into.
 
 If the Xcode version is newer than 13.3, you'll likely need to find and append the UUID for that version to the `Info.plist` file.
 
@@ -17,3 +23,5 @@ defaults read /Applications/Xcode.app/Contents/Info DVTPlugInCompatibilityUUID
 ```
 
 Info [from here](https://www.mokacoding.com/blog/xcode-plugins-update/)
+
+The new CLI tool manages all of that locally, so it's generally a better idea to use that. See the main [README](README.md) for more info.

@@ -6,6 +6,12 @@ Plugin that enables debugging Kotlin code in iOS applications with Xcode. This i
 >
 > We're looking for a Mobile Developer, with Android/Kotlin experience, who is eager to dive into Kotlin Multiplatform Mobile (KMM) development. Come join the remote-first team putting KMM in production. [More info here](https://go.touchlab.co/careers-gh).
 
+## Beta Version!!!
+
+The CLI installer is a significant improvement over our original install process, but is also more complex. We are considering this version to be a beta release. Please let us know if you have issues! If there is a crash using the tool, it will ask if you want to upload a report. Please do. For other problems, [please file an issue in Github](https://github.com/touchlab/xcode-kotlin/issues).
+
+We aren't anticipating any major problems, but If you cannot get the plugin to install properly, you can follow the [MANUAL_INSTALL](MANUAL_INSTALL.md) instructions as a workaround.
+
 ## Overview
 
 The `xcode-kotlin` project consists of two main parts: the CLI manager, and the Xcode plugin itself.
@@ -15,6 +21,7 @@ The `xcode-kotlin` project consists of two main parts: the CLI manager, and the 
 The CLI (command line interface) is an executable that is installed on your machine and manages the plugin installation(s). For existing users of `xcode-kotlin`, the CLI is new. The CLI was added to enable the following:
 
 - Homebrew installation
+- Better Xcode integration (No more "Load Bundle" popups!)
 - Easier management of multiple Xcode installations
 - Automatic "sync". When Xcode updates, we need to update the plugin config. This previously required updating the `xcode-kotlin` project GitHub repo, pulling, and reinstalling. The CLI can do this locally.
 - Better diagnostic info and support for install issues.
@@ -37,9 +44,9 @@ Once installed, run the CLI:
 xcode-kotlin install
 ```
 
-This will install the plugin with support for all of your currently installed Xcode installations. After install completes, Xcode will ask if you want to Load Bundle. You need to do that, or Xcode will not load the changes.
+This will install the plugin with support for all of your currently installed Xcode installations.
 
-![loadbundle](https://tl-navigator-images.s3.us-east-1.amazonaws.com/docimages/2022-04-27_08-03-loadbundle.png)
+## Manual Install
 
 If needed, you can install manually. See [MANUAL_INSTALL](MANUAL_INSTALL.md).
 
