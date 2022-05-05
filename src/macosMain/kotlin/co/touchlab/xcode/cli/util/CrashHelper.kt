@@ -51,7 +51,7 @@ class CrashHelper : LogWriter() {
         }
 
         append("FINAL CRASH\n===========\n\n")
-        append(e.getStackTrace().joinToString("\n"))
+        append(e.stackTraceToString())
     }
 
     data class LogEntry(val severity: Severity, val message: String, val tag: String, val throwable: Throwable?) {
