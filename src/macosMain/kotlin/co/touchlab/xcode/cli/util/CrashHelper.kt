@@ -19,7 +19,12 @@ class CrashHelper : LogWriter() {
     }
 
     private fun upload(crashReport: String) {
-        val url: NSURL = NSURL.URLWithString("https://api.touchlab.dev/crash/report")!!
+        val tagQuery = "?tag=xcode-kotlin" + if (Platform.isDebugBinary) "-DEBUG" else ""
+        val url = "https://api.touchlab.dev/crash/report$tagQuery".let { urlString ->
+            checkNotNull(NSURL.URLWithString(urlString)) {
+                "Couldn't construct NSURL from $urlString"
+            }
+        }
         val request = NSMutableURLRequest.requestWithURL(url).apply {
             setHTTPMethod("POST")
             setValue("text/plain", "Content-Type")
@@ -33,8 +38,8 @@ class CrashHelper : LogWriter() {
                 if (error != null) {
                     uploadComplete.completeExceptionally(CrashReportUploadException(error))
                 } else {
-                uploadComplete.complete(Unit)
-            }
+                    uploadComplete.complete(Unit)
+                }
             }
 
         runBlocking {
