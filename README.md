@@ -6,6 +6,12 @@ Plugin that enables debugging Kotlin code in iOS applications with Xcode. This i
 >
 > We're looking for a Mobile Developer, with Android/Kotlin experience, who is eager to dive into Kotlin Multiplatform Mobile (KMM) development. Come join the remote-first team putting KMM in production. [More info here](https://go.touchlab.co/careers-gh).
 
+## Feedback!!
+
+We'd love to know more about your experiences with the Xcode plugin and Kotlin Multiplatform dev in general. Please take 5 minutes and fill out our survey. The information really helps us build better tools.
+
+> [Open Touchlab Xcode Plugin User Survey](https://touchlabwaitlist.typeform.com/xcodepluginuser)
+
 ## Beta Version!!!
 
 The CLI installer is a significant improvement over our original install process, but is also more complex. We are considering this version to be a beta release. Please let us know if you have issues! If there is a crash using the tool, it will ask if you want to upload a report. Please do. For other problems, [please file an issue in Github](https://github.com/touchlab/xcode-kotlin/issues).
@@ -35,7 +41,7 @@ Xcode does not generally allow plugins, but it does allow for language definitio
 First you need to install the CLI that takes care of installing the plugin into Xcode. The CLI is available throuh Homebrew:
 
 ```shell
-brew install touchlab/homebrew-touchlab/xcode-kotlin --head
+brew install touchlab/homebrew-touchlab/xcode-kotlin
 ```
 
 Once installed, run the CLI:
