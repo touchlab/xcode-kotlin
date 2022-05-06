@@ -1,0 +1,18 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="sync" type="KonanRunConfiguration" factoryName="KonanApp" PROGRAM_PARAMS="sync" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true">
+    <executable TARGET="macos_arm64" TARGET_NAME="macosArm64" EXECUTABLE_NAME="xcode-kotlin" PROJECT_PREFIX="xcode-kotlin:" IS_TEST="false">
+      <variant NAME="Debug" GRADLE_TASK=":linkDebugExecutableMacosArm64" FILE="$PROJECT_DIR$/build/bin/macosArm64/debugExecutable/xcode-kotlin.kexe" WORKING_DIR="" PROGRAM_PARAMS="">
+        <envs />
+      </variant>
+      <variant NAME="Release" GRADLE_TASK=":linkReleaseExecutableMacosArm64" FILE="$PROJECT_DIR$/build/bin/macosArm64/releaseExecutable/xcode-kotlin.kexe" WORKING_DIR="" PROGRAM_PARAMS="">
+        <envs />
+      </variant>
+    </executable>
+    <variant NAME="Debug" GRADLE_TASK=":linkDebugExecutableMacosArm64" FILE="$PROJECT_DIR$/build/bin/macosArm64/debugExecutable/xcode-kotlin.kexe" WORKING_DIR="" PROGRAM_PARAMS="">
+      <envs />
+    </variant>
+    <method v="2">
+      <option name="com.jetbrains.mpp.KonanBuildTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

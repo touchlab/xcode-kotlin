@@ -1,26 +1,72 @@
 # Kotlin Native Xcode Support
 
-Plugin to facilitate debugging iOS applications using Kotlin Native in Xcode. Defines Kotlin files as source code, with basic highlighting. Allows you to set breakpoints and includes llvm support to view data in the debug window. Xcode does not officially support custom language definitions, but they also don't explicitly block them.
+Plugin that enables debugging Kotlin code in iOS applications with Xcode. This is generally for use with Kotlin Multiplatform and Kotlin/Native code shared as Xcode Frameworks. The plugin tells Xcode that Kotlin files are source code, provides source highlighting, and enables llvm and lldb support to allow interactive debugging.
 
 > ## Touchlab's Hiring!
 >
 > We're looking for a Mobile Developer, with Android/Kotlin experience, who is eager to dive into Kotlin Multiplatform Mobile (KMM) development. Come join the remote-first team putting KMM in production. [More info here](https://go.touchlab.co/careers-gh).
 
+## Feedback!!
+
+We'd love to know more about your experiences with the Xcode plugin and Kotlin Multiplatform dev in general. Please take 5 minutes and fill out our survey. The information really helps us build better tools.
+
+> [Open Touchlab Xcode Plugin User Survey](https://touchlabwaitlist.typeform.com/xcodepluginuser)
+
+## Beta Version!!!
+
+The CLI installer is a significant improvement over our original install process, but is also more complex. We are considering this version to be a beta release. Please let us know if you have issues! If there is a crash using the tool, it will ask if you want to upload a report. Please do. For other problems, [please file an issue in Github](https://github.com/touchlab/xcode-kotlin/issues).
+
+We aren't anticipating any major problems, but If you cannot get the plugin to install properly, you can follow the [MANUAL_INSTALL](MANUAL_INSTALL.md) instructions as a workaround.
+
+## Overview
+
+The `xcode-kotlin` project consists of two main parts: the CLI manager, and the Xcode plugin itself.
+
+### CLI
+
+The CLI (command line interface) is an executable that is installed on your machine and manages the plugin installation(s). For existing users of `xcode-kotlin`, the CLI is new. The CLI was added to enable the following:
+
+- Homebrew installation
+- Better Xcode integration (No more "Load Bundle" popups!)
+- Easier management of multiple Xcode installations
+- Automatic "sync". When Xcode updates, we need to update the plugin config. This previously required updating the `xcode-kotlin` project GitHub repo, pulling, and reinstalling. The CLI can do this locally.
+- Better diagnostic info and support for install issues.
+
+### Xcode Plugin
+
+Xcode does not generally allow plugins, but it does allow for language definitions and lldb integrations. There is no official process for including these things, which is why the CLI is necessary. However, lldb is an open standard and debugging integrations are a common use case. We share, and contribute to, the [official Kotlin language lldb extensions](https://github.com/JetBrains/kotlin/blob/master/kotlin-native/llvmDebugInfoC/src/scripts/konan_lldb.py).
+
 ## Installation
 
-Generally, all you need to do is run the setup script:
+First you need to install the CLI that takes care of installing the plugin into Xcode. The CLI is available throuh Homebrew:
 
+```shell
+brew install touchlab/homebrew-touchlab/xcode-kotlin
 ```
-./setup.sh
+
+Once installed, run the CLI:
+
+```shell
+xcode-kotlin install
 ```
 
-After install completes, Xcode will ask if you want to Load Bundle. You need to do that, or Xcode will not load the changes.
+This will install the plugin with support for all of your currently installed Xcode installations.
 
-For advanced users, or if you have issues, you may want to install manually. There are 2 parts to Kotlin support: 1) debugging support and 2) language color and style formatting.
+## Manual Install
 
-You need to tell Xcode that `*.kt` files are source files, and run an lldb formatter script when debugging starts. Look at the setup script and see the folders where those parts go.
+If needed, you can install manually. See [MANUAL_INSTALL](MANUAL_INSTALL.md).
 
-## Usage
+## Sync
+
+When you update Xcode versions, you'll need to enable the plugin for that version. Run:
+
+```shell
+xcode-kotlin sync
+```
+
+This process adds the UUID for the new Xcode version to the local plugin configuration. For users familiar with earlier versions of `xcode-kotlin`, Xcode updates would previously require an [update from GitHub](https://github.com/touchlab/xcode-kotlin/pull/37/files).
+
+## Plugin Usage
 
 If properly set up, you should be able to add Kotlin source to Xcode, set up breakpoints, and step through code. To add Kotlin source to Xcode, follow these steps:
 
@@ -28,33 +74,39 @@ If properly set up, you should be able to add Kotlin source to Xcode, set up bre
 2. Add Files to the newly created group (Kotlin Debug in this instance).
 3. Select the folders in the Kotlin library that are directly relevant to the iOS build, which will usually be `commonMain` and `iosMain`. Make sure "Copy items into destination group's folder (if needed)" is unchecked.
 
-![](images/XcodeKotlinFileReferencesSteps.png)
+<img src="https://tl-navigator-images.s3.us-east-1.amazonaws.com/docimages/2022-04-27_08-31-XcodeKotlinFileReferencesSteps.png" alt="XcodeKotlinFileReferencesSteps" style="zoom: 25%;" />
 
 When you're done, your Xcode project structure should look something like this:
 
-![](images/final.png)
+![kotlinsources](https://tl-navigator-images.s3.us-east-1.amazonaws.com/docimages/2022-04-27_09-03-kotlinsources.png)
 
 ### Sample
 
 The project used as an example above is [KaMPKit](https://github.com/touchlab/KaMPKit/). Check it out if you want to see a project that already includes Kotlin file references in Xcode. It's an excellent template for Kotlin multiplatform mobile projects.
 
-### Sources
+## Troubleshooting
 
-Setting up the Plugin has been an amalgam of various source projects, as Xcode "Plugins" are undocumented. The most significant piece, the language color file came from other color files shipped with Xcode. Xcode plugin file from [GraphQL](https://github.com/apollographql/xcode-graphql/blob/master/GraphQL.ideplugin/Contents/Resources/GraphQL.xcplugindata)
+If you're having any issues, try reinstalling the plugin:
 
-LLDB formatting originally comes from the Kotlin/Native project, source [konan_lldb.py](https://github.com/JetBrains/kotlin-native/blob/dbb162a4b523071f31913e888e212df344a1b61e/llvmDebugInfoC/src/scripts/konan_lldb.py), although the way data is grabbed has been heavily modified to better support an interactive debugger.
-
-## Possible Future Stuff
-
-Check out the [Discussions](https://github.com/touchlab/xcode-kotlin/discussions/).
-
-## Xcode Updates
-
-Every time Xcode is updated we need the UUID. It needs to be added to `Kotlin.ideplugin/Contents/Info.plist`. To find the 
-UUID of your version of Xcode, run the following:
-
-```
-defaults read /Applications/Xcode.app/Contents/Info DVTPlugInCompatibilityUUID
+```shell
+xcode-kotlin uninstall
+xcode-kotlin install
 ```
 
-Info [from here](https://www.mokacoding.com/blog/xcode-plugins-update/)
+If it doesn't fix the issue, run:
+
+```shell
+xcode-kotlin info
+```
+
+This will show you status of the plugin and a list of found Xcode installations. If the Xcode you want to use isn't listed you can run the `sync` command and provide it with paths to Xcode installations to add support for:
+
+```
+xcode-kotlin sync /Volumes/ExternalVolume1/Xcode.app
+```
+
+If the issue still persists, open a new GitHub issue and include the output of the `info` command.
+
+## About
+
+Our Xcode plugin incorporates the work of other brave souls around the web exploring the undocumented corners of Xcode. See [ABOUT](ABOUT.md).

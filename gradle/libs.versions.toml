@@ -1,0 +1,16 @@
+[versions]
+kotlin = "1.6.20"
+kotlinx-coroutines = "1.6.0"
+kotlinx-cli = "0.3.4"
+kotlinx-serialization = "1.3.2"
+kermit = "1.2.0-M1"
+
+[libraries]
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-cli = { module = "org.jetbrains.kotlinx:kotlinx-cli", version.ref = "kotlinx-cli" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+
+[plugins]
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
