@@ -41,7 +41,7 @@ Xcode does not generally allow plugins, but it does allow for language definitio
 First you need to install the CLI that takes care of installing the plugin into Xcode. The CLI is available throuh Homebrew:
 
 ```shell
-brew install touchlab/homebrew-touchlab/xcode-kotlin
+brew install xcode-kotlin
 ```
 
 Once installed, run the CLI:
