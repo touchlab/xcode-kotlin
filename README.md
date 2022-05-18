@@ -1,16 +1,19 @@
 # Kotlin Native Xcode Support
 
-Plugin that enables debugging Kotlin code in iOS applications with Xcode. This is generally for use with Kotlin Multiplatform and Kotlin/Native code shared as Xcode Frameworks. The plugin tells Xcode that Kotlin files are source code, provides source highlighting, and enables llvm and lldb support to allow interactive debugging.
+*The xcode-kotlin plugin allows debugging of Kotlin code running in an iOS application, directly from Xcode.*
 
-> ## Touchlab's Hiring!
->
-> We're looking for a Mobile Developer, with Android/Kotlin experience, who is eager to dive into Kotlin Multiplatform Mobile (KMM) development. Come join the remote-first team putting KMM in production. [More info here](https://go.touchlab.co/careers-gh).
+This enables a smoother development and integration experience for iOS developers using shared code from Kotlin, and a more accessible experience for larger teams where everyone may not be editing the shared code directly.
 
-## Feedback!!
+*************************************************************************
+## 🔑🔑 Improving the iOS dev experience is key to KMP adoption. 
 
-We'd love to know more about your experiences with the Xcode plugin and Kotlin Multiplatform dev in general. Please take 5 minutes and fill out our survey. The information really helps us build better tools.
+One of Touchlab’s core goals is to improve the developer experience with KMP, particularly around tooling and especially for iOS developers. We believe that improving the iOS dev experience is key to KMP adoption and we’re going to continue to work on ways to support the iOS KMP community. 
+
+Let us know how you're using (or will use) the xcode-kotlin plugin by taking our 5-minute survey.
 
 > [Open Touchlab Xcode Plugin User Survey](https://touchlabwaitlist.typeform.com/xcodepluginuser)
+*************************************************************************
+
 
 ## Beta Version!!!
 
@@ -110,3 +113,8 @@ If the issue still persists, open a new GitHub issue and include the output of t
 ## About
 
 Our Xcode plugin incorporates the work of other brave souls around the web exploring the undocumented corners of Xcode. See [ABOUT](ABOUT.md).
+
+***********************
+> ## Touchlab's Hiring!
+>
+> We're looking for a Mobile Developer, with Android/Kotlin experience, who is eager to dive into Kotlin Multiplatform Mobile (KMM) development. Come join the remote-first team putting KMM in production. [More info here](https://go.touchlab.co/careers-gh).
