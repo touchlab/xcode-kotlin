@@ -41,11 +41,13 @@ Xcode does not generally allow plugins, but it does allow for language definitio
 
 ## Installation
 
-First you need to install the CLI that takes care of installing the plugin into Xcode. The CLI is available throuh Homebrew:
+First you need to install the CLI that takes care of installing the plugin into Xcode. The CLI is available through Homebrew:
 
 ```shell
-brew install xcode-kotlin
+brew install xcode-kotlin --head
 ```
+
+**Note** We are in beta and had [an issue with the published homebrew version](https://github.com/touchlab/xcode-kotlin/issues/85). The command above will build locally. Once [approved by the homebrew team](https://github.com/Homebrew/homebrew-core/pull/101920), you can run `brew install xcode-kotlin` and it will grab an compiled binary
 
 Once installed, run the CLI:
 
