@@ -11,7 +11,8 @@ import co.touchlab.xcode.cli.util.fromString
 object PluginManager {
     val pluginName = "Kotlin.ideplugin"
     val pluginSourceFile = File(Path.dataDir / pluginName)
-    val pluginTargetFile = File(XcodeHelper.xcodeLibraryPath / "Plug-ins" / pluginName)
+    val pluginsDirectory = File(XcodeHelper.xcodeLibraryPath / "Plug-ins")
+    val pluginTargetFile = File(pluginsDirectory.path / pluginName)
 
     private val pluginSourceInfoFile = File(pluginSourceFile.path / "Contents" / "Info.plist")
     private val pluginTargetInfoFile = File(pluginTargetFile.path / "Contents" / "Info.plist")
@@ -50,6 +51,8 @@ object PluginManager {
         }
 
     fun install(xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
+        logger.v { "Ensuring plugins directory exists at ${pluginsDirectory.path}" }
+        pluginsDirectory.mkdirs()
         logger.v { "Copying Xcode plugin to target path ${pluginTargetFile.path}" }
         pluginSourceFile.copy(pluginTargetFile.path)
         sync(xcodeInstallations)
