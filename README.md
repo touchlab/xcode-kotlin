@@ -115,6 +115,7 @@ If the issue still persists, open a new GitHub issue and include the output of t
 Our Xcode plugin incorporates the work of other brave souls around the web exploring the undocumented corners of Xcode. See [ABOUT](ABOUT.md).
 
 ***********************
-> ## Touchlab's Hiring!
+> ## Subscribe!
 >
-> We're looking for a Mobile Developer, with Android/Kotlin experience, who is eager to dive into Kotlin Multiplatform Mobile (KMM) development. Come join the remote-first team putting KMM in production. [More info here](https://go.touchlab.co/careers-gh).
+> We build solutions that get teams started smoothly with Kotlin Multiplatform Mobile and ensure their success in production. Join our community to learn how your peers are adopting KMM.
+ [Sign up here](https://go.touchlab.co/newsletter-gh)!
