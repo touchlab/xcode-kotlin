@@ -23,9 +23,7 @@ We aren't anticipating any major problems, but If you cannot get the plugin to i
 
 ## Getting Help
 
-Xcode-kotlin support can be found in the Kotlin Community Slack. Look for the "[#touchlab-tools](https://kotlinlang.slack.com/archives/CTJB58X7X)" channel.
-
-Join the Kotlin Community Slack, [request access here](http://slack.kotlinlang.org/).
+Xcode-kotlin support can be found in the Kotlin Community Slack, [request access here](http://slack.kotlinlang.org/). Post in the "[#touchlab-tools](https://kotlinlang.slack.com/archives/CTJB58X7X)" channel.
 
 For direct assistance, please [contact Touchlab](https://go.touchlab.co/contactus-gh) to discuss support options.
 
