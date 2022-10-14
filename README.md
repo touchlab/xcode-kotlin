@@ -21,6 +21,14 @@ The CLI installer is a significant improvement over our original install process
 
 We aren't anticipating any major problems, but If you cannot get the plugin to install properly, you can follow the [MANUAL_INSTALL](MANUAL_INSTALL.md) instructions as a workaround.
 
+## Getting Help
+
+Xcode-kotlin support can be found in the Kotlin Community Slack. Look for the "[#touchlab-tools](https://kotlinlang.slack.com/archives/CTJB58X7X)" channel.
+
+Join the Kotlin Community Slack, [request access here](http://slack.kotlinlang.org/).
+
+For direct assistance, please [contact Touchlab](https://go.touchlab.co/contactus-gh) to discuss support options.
+
 ## Overview
 
 The `xcode-kotlin` project consists of two main parts: the CLI manager, and the Xcode plugin itself.
