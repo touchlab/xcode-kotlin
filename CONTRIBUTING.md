@@ -6,7 +6,8 @@ Here you can find a set of guidelines for pitching in.
 ## Questions
 
 If you have any questions, please, contact us in the Kotlin [Community Slack](https://kotlinlang.slack.com/) in 
-<channel-name> channel. To join the Kotlin Community Slack, [request access here](http://slack.kotlinlang.org/).
+[this channel](https://kotlinlang.slack.com/archives/CTJB58X7X). To join the Kotlin Community Slack, 
+[request access here](http://slack.kotlinlang.org/).
 
 For direct assistance, please [reach out to Touchlab](https://touchlab.co/contact-us/) to discuss support options.
 
