@@ -1,11 +1,7 @@
 package co.touchlab.xcode.cli.util
 
 import co.touchlab.xcode.cli.LLDBInitManager
-import kotlinx.cinterop.ObjCObjectVar
-import kotlinx.cinterop.alloc
-import kotlinx.cinterop.memScoped
-import kotlinx.cinterop.ptr
-import kotlinx.cinterop.value
+import kotlinx.cinterop.*
 import platform.Foundation.NSData
 import platform.Foundation.NSDataWritingAtomic
 import platform.Foundation.NSError
@@ -15,6 +11,7 @@ import platform.Foundation.NSUTF8StringEncoding
 import platform.Foundation.create
 import platform.Foundation.writeToFile
 
+@OptIn(ExperimentalForeignApi::class)
 class File(private val providedPath: Path, private val resolveSymlinks: Boolean = true) {
     val path: Path
         get() = if (resolveSymlinks) {
@@ -24,7 +21,7 @@ class File(private val providedPath: Path, private val resolveSymlinks: Boolean 
         }
 
     fun dataContents(): NSData = throwingIOException { errorPointer ->
-        NSData.create(contentsOfFile = path.value, options = 0, error = errorPointer.ptr)
+        NSData.create(contentsOfFile = path.value, options = 0u, error = errorPointer.ptr)
     } ?: error("Couldn't load data contents of file $path. This shouldn't have been thrown, because we should receive a NSError!")
 
     fun stringContents(): NSString = throwingIOException { errorPointer ->

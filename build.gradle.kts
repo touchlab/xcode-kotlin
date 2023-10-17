@@ -3,6 +3,7 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
+    alias(libs.plugins.gradle.doctor)
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.plugin.serialization)
 }
@@ -10,15 +11,16 @@ plugins {
 group = "co.touchlab"
 version = "1.2.1"
 
-repositories {
-    mavenCentral()
-}
-
 kotlin {
     listOf(macosX64(), macosArm64()).forEach {
         it.binaries {
             executable {
                 entryPoint = "co.touchlab.xcode.cli.main"
+
+                runTask?.run {
+                    val args = providers.gradleProperty("runArgs")
+                    args(args.getOrElse("").split(' '))
+                }
             }
         }
     }
@@ -65,8 +67,12 @@ kotlin {
 
 tasks.register<Exec>("assembleReleaseExecutableMacos") {
     dependsOn("linkReleaseExecutableMacosX64", "linkReleaseExecutableMacosArm64")
-    commandLine("lipo", "-create", "-o", "xcode-kotlin", "bin/macosX64/releaseExecutable/xcode-kotlin.kexe", "bin/macosArm64/releaseExecutable/xcode-kotlin.kexe")
-    workingDir = buildDir
+    commandLine(
+        "lipo", "-create", "-o", "xcode-kotlin",
+        "bin/macosX64/releaseExecutable/xcode-kotlin.kexe",
+        "bin/macosArm64/releaseExecutable/xcode-kotlin.kexe",
+    )
+    workingDir(layout.buildDirectory)
     group = "build"
     description = "Builds an universal macOS binary for both x86_64 and arm64 architectures."
 }

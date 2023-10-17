@@ -1,11 +1,7 @@
 package co.touchlab.xcode.cli.util
 
 import co.touchlab.kermit.Logger
-import kotlinx.cinterop.ObjCObjectVar
-import kotlinx.cinterop.alloc
-import kotlinx.cinterop.memScoped
-import kotlinx.cinterop.ptr
-import kotlinx.cinterop.value
+import kotlinx.cinterop.*
 import platform.Foundation.NSArray
 import platform.Foundation.NSData
 import platform.Foundation.NSDate
@@ -25,6 +21,7 @@ import platform.Foundation.create
 import platform.Foundation.valueForKey
 import platform.darwin.NSObject
 
+@OptIn(ExperimentalForeignApi::class)
 class PropertyList(val root: Object) {
     enum class Format {
         XML, OpenStep, Binary;
@@ -81,7 +78,7 @@ class PropertyList(val root: Object) {
             val data = NSPropertyListSerialization.dataWithPropertyList(
                 plist = recursiveReverseBridge(root),
                 format = format.objc,
-                options = 0,
+                options = 0u,
                 error = errorPointer.ptr,
             )
             val error = errorPointer.value

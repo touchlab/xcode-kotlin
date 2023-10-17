@@ -1,4 +1,8 @@
 
 rootProject.name = "xcode-kotlin"
 
-enableFeaturePreview("VERSION_CATALOGS")
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+}

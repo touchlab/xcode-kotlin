@@ -1,6 +1,7 @@
 package co.touchlab.xcode.cli.util
 
 import co.touchlab.kermit.Logger
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.posix.fflush
 import platform.posix.fprintf
 import platform.posix.stderr
@@ -36,6 +37,7 @@ object Console {
         return readLine()
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     fun printError(message: String) {
         fprintf(stderr, message)
         fflush(stderr)
