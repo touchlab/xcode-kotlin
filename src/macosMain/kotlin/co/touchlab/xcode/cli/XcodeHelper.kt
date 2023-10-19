@@ -1,6 +1,7 @@
 package co.touchlab.xcode.cli
 
 import co.touchlab.kermit.Logger
+import co.touchlab.xcode.cli.XcodeHelper.Defaults.nonApplePlugins
 import co.touchlab.xcode.cli.util.BackupHelper
 import co.touchlab.xcode.cli.util.Console
 import co.touchlab.xcode.cli.util.File
@@ -10,6 +11,8 @@ import co.touchlab.xcode.cli.util.Shell
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import platform.Foundation.NSNumber
+import platform.Foundation.numberWithBool
 import platform.posix.exit
 
 object XcodeHelper {
@@ -28,7 +31,7 @@ object XcodeHelper {
             if (shutdown) {
                 logger.v { "Shutting down Xcode." }
                 Console.echo("Shutting down Xcode...")
-                Shell.exec("/usr/bin/pkill", "-x", xcodeProcessName).checkSuccessful {
+                killRunningXcode().checkSuccessful {
                     "Couldn't shut down Xcode!"
                 }
             } else {
@@ -38,6 +41,16 @@ object XcodeHelper {
         } else {
             logger.v { "No running Xcode found." }
         }
+    }
+
+    fun openInBackground(installation: XcodeInstallation) {
+        Shell.exec("/usr/bin/open", "-gjFa", installation.path.value).checkSuccessful {
+            "Couldn't open ${installation.name} at ${installation.path}!"
+        }
+    }
+
+    fun killRunningXcode(): Shell.ExecutionResult {
+        return Shell.exec("/usr/bin/pkill", "-x", xcodeProcessName)
     }
 
     fun allXcodeInstallations(): List<XcodeInstallation> {
@@ -62,25 +75,19 @@ object XcodeHelper {
     fun installationAt(path: Path): XcodeInstallation {
         val xcodeFile = File(path)
         require(xcodeFile.exists()) { "Path $path doesn't exist!" }
+        val versionPlist = PropertyList.create(path / "Contents" / "version.plist")
+        val version = with(XcodeVersion) {
+            checkNotNull(versionPlist.version?.trim()) { "Couldn't get version of Xcode at $path." }
+        }
+        val build = with(XcodeVersion) {
+            checkNotNull(versionPlist.build?.trim()) { "Couldn't get build number of Xcode at $path." }
+        }
+
         val xcodeInfoPath = path / "Contents" / "Info"
-        val versionResult = Shell.exec("/usr/bin/defaults", "read", xcodeInfoPath.value, "CFBundleShortVersionString")
-            .checkSuccessful {
-                "Couldn't get version of Xcode at $path."
-            }
-        val buildResult = Shell.exec("/usr/bin/defaults", "read", xcodeInfoPath.value, "DTXcodeBuild")
-            .checkSuccessful {
-                "Couldn't get build number of Xcode at $path."
-            }
         val pluginCompatabilityIdResult = Shell.exec("/usr/bin/defaults", "read", xcodeInfoPath.value, "DVTPlugInCompatibilityUUID")
             .checkSuccessful {
                 "Couldn't get plugin compatibility UUID from Xcode at ${path}."
             }
-        val version = checkNotNull(versionResult.output?.trim()) {
-            "Couldn't get version of Xcode at path: ${path}."
-        }
-        val build = checkNotNull(buildResult.output?.trim()) {
-            "Couldn't get version of Xcode at path: ${path}."
-        }
         val pluginCompatabilityId = checkNotNull(pluginCompatabilityIdResult.output?.trim()) {
             "Couldn't get plugin compatibility ID of Xcode at path: ${path}."
         }
@@ -92,7 +99,7 @@ object XcodeHelper {
         )
     }
 
-    fun addKotlinPluginToDefaults(pluginVersion: KotlinVersion, xcodeInstallations: List<XcodeInstallation>) {
+    fun allowKotlinPlugin(pluginVersion: KotlinVersion, xcodeInstallations: List<XcodeInstallation>) {
         logger.i { "Adding plugin to allowed list in Xcode defaults." }
         modifyingXcodeDefaults("BeforeAdd") {
             for (installation in xcodeInstallations) {
@@ -101,13 +108,31 @@ object XcodeHelper {
         }
     }
 
+    fun skipKotlinPlugin(pluginVersion: KotlinVersion, xcodeInstallations: List<XcodeInstallation>) {
+        logger.i { "Adding plugin to skipped list in Xcode defaults." }
+        modifyingXcodeDefaults("BeforeSkip") {
+            for (installation in xcodeInstallations) {
+                it.nonApplePlugins(installation.version).skipped.add(xcodeKotlinBundleId, pluginVersion.toString())
+            }
+        }
+    }
+
     fun removeKotlinPluginFromDefaults() {
         logger.i { "Removing plugin from allowed/skipped list in Xcode defaults." }
-        modifyingXcodeDefaults("BeforeRemove") {
-            it.allNonApplePlugins().forEach {
+        modifyingXcodeDefaults("BeforeRemove") { properties ->
+            properties.allNonApplePlugins().forEach {
                 it.allowed.remove(xcodeKotlinBundleId)
                 it.skipped.remove(xcodeKotlinBundleId)
             }
+        }
+    }
+
+    fun setIDEPerformanceDebuggerEnabled(enabled: Boolean) {
+        logger.i { "Setting IDEPerformanceDebuggerEnabled to $enabled in Xcode defaults." }
+        modifyingXcodeDefaults("BeforeIDEPerformanceDebuggerEnabled-$enabled") {
+            it.root.dictionary["IDEPerformanceDebuggerEnabled"] = PropertyList.Object.Number(
+                NSNumber.numberWithBool(enabled)
+            )
         }
     }
 
@@ -146,6 +171,30 @@ object XcodeHelper {
             @SerialName("spdevtools_version")
             val version: String,
         )
+    }
+
+    private object XcodeVersion {
+        val PropertyList.version: String?
+            get() = root.dictionary["CFBundleShortVersionString"]?.stringOrNull?.value
+
+        val PropertyList.build: String?
+            get() = root.dictionary["ProductBuildVersion"]?.stringOrNull?.value
+    }
+
+    object PlugInCache {
+        val PropertyList.scanRecords: DVTScanRecords
+            get() = DVTScanRecords(root.dictionary["DVTScanRecords"]?.arrayOrNull ?: PropertyList.Object.Array())
+
+        class DVTScanRecords(private val backingArray: PropertyList.Object.Array) {
+            fun contains(block: (Record) -> Boolean): Boolean {
+                return backingArray.any { block(Record(it.dictionary)) }
+            }
+
+            class Record(private val backingDictionary: PropertyList.Object.Dictionary) {
+                val bundlePath: String
+                    get() = backingDictionary["bundlePath"]?.stringOrNull?.value ?: ""
+            }
+        }
     }
 
     private object Defaults {

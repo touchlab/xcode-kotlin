@@ -20,6 +20,9 @@ kotlin {
                 runTask?.run {
                     val args = providers.gradleProperty("runArgs")
                     args(args.getOrElse("").split(' '))
+
+                    standardOutput = System.out
+                    errorOutput = System.err
                 }
             }
         }
@@ -61,6 +64,8 @@ kotlin {
 
         all {
             languageSettings.optIn("kotlinx.cli.ExperimentalCli")
+            languageSettings.optIn("kotlinx.cinterop.BetaInteropApi")
+            languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")
         }
     }
 }

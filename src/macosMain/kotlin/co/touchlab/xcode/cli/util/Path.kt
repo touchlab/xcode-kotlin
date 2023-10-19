@@ -36,6 +36,8 @@ data class Path(
         return Path(value.resolvingSymlinksInPath())
     }
 
+    fun exists(): Boolean = NSFileManager.defaultManager.fileExistsAtPath(value)
+
     override fun toString(): String {
         return value
     }

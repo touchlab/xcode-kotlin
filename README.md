@@ -14,12 +14,35 @@ Let us know how you're using (or will use) the xcode-kotlin plugin by taking our
 > [Open Touchlab Xcode Plugin User Survey](https://touchlabwaitlist.typeform.com/xcodepluginuser)
 *************************************************************************
 
+## 💥 Xcode 15+ support 💥
 
-## Beta Version!!!
+Xcode 15 introduced a bug where it crashes if you have any non-Apple Xcode plugin installed.
+Until the bug is fixed, we have found a workaround that's built into the `xcode-kotlin` CLI.
+All your Xcode 15 installations will have the workaround applied to them during `install`,
+`sync` and a new `fix-xcode15` commands.
 
-The CLI installer is a significant improvement over our original install process, but is also more complex. We are considering this version to be a beta release. Please let us know if you have issues! If there is a crash using the tool, it will ask if you want to upload a report. Please do. For other problems, [please file an issue in Github](https://github.com/touchlab/xcode-kotlin/issues).
+The workaround works like this:
+1. Disabling Xcode Kotlin plugin (if it's installed)
+2. Enabling `IDEPerformanceDebugger` plugin that's in Xcode
+3. Running each Xcode 15 installation you have (15.0, 15.0.1, etc.)
+4. Disabling `IDEPerformanceDebugger` plugin
+5. Re-enabling Xcode Kotlin plugin (if it's installed)
 
-We aren't anticipating any major problems, but If you cannot get the plugin to install properly, you can follow the [MANUAL_INSTALL](MANUAL_INSTALL.md) instructions as a workaround.
+This lets Xcode create a valid plugin cache and use it the next time it runs. 
+When the plugin cache isn't used,
+Xcode tries to scan all plugins and due to a bug freezes extension points that are used by custom plugins,
+like Xcode Kotlin.
+When the plugin cache is used, the execution goes through a different path so those extension points are not frozen,
+allowing Xcode Kotlin to load properly.
+
+The reason Xcode doesn't use the cache otherwise is 
+that it expects to find an entry for `IDEPerformanceDebugger.framework`.
+But for some reason,
+Xcode doesn't add the `IDEPerformanceDebugger` entry to the plugin cache unless the plugin is enabled.
+So essentially, performing these steps should also lead to faster Xcode startup time, what a bargain!
+
+In case your Xcode starts crashing again, run `xcode-kotlin fix-xcode15` (or `xcode-kotlin sync`).
+This will reapply the workaround and should make your Xcode work again.
 
 ## Getting Help
 
@@ -63,7 +86,14 @@ This will install the plugin with support for all of your currently installed Xc
 
 ## Manual Install
 
-If needed, you can install manually. See [MANUAL_INSTALL](MANUAL_INSTALL.md).
+The CLI installer is a significant improvement over our original install process, but is also more complex.
+Please let us know if you encounter any issues.
+If there is a crash using the tool, it will ask if you want to upload a report.
+Please do.
+For other problems, [please file an issue in Github](https://github.com/touchlab/xcode-kotlin/issues).
+
+We aren't anticipating any major problems, but If you cannot get the plugin to install properly,
+you can follow the [MANUAL_INSTALL](MANUAL_INSTALL.md) instructions as a workaround.
 
 ## Sync
 
