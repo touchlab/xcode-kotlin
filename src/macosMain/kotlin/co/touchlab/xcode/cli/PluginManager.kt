@@ -73,7 +73,7 @@ object PluginManager {
 
         Console.echo("Synchronizing plugin compatibility list.")
         val additionalPluginCompatibilityIds =
-            xcodeInstallations.map { PropertyList.Object.String(it.pluginCompatabilityId) }
+            xcodeInstallations.mapNotNull { it.pluginCompatabilityId?.let { PropertyList.Object.String(it) } }
         logger.v { "Xcode installation IDs to include: ${additionalPluginCompatibilityIds.joinToString { it.value }}" }
         val infoPlist = PropertyList.create(pluginTargetInfoFile)
         val rootDictionary = infoPlist.root.dictionary
