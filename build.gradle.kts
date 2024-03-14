@@ -3,13 +3,13 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
-    alias(libs.plugins.gradle.doctor)
+//    alias(libs.plugins.gradle.doctor)
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.plugin.serialization)
 }
 
 group = "co.touchlab"
-version = "1.3.0"
+version = "1.3.1"
 
 kotlin {
     listOf(macosX64(), macosArm64()).forEach {
