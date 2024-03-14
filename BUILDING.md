@@ -5,6 +5,22 @@ The xcode-kotlin plugin is written in **Kotlin**. It uses
 
 Building environment: **IntelliJ IDEA**
 
+## Build Local Development Version
+
+As this is a tool for Xcode, you'll need to run the build on a mac machine. We'll assume your machine is an ARM, Mx
+chip and not Intel. Replace the calls with X64 versions if needed.
+
+To build, open a terminal in the root project folder and run:
+
+```shell
+./gradlew preparePlugin linkDebugExecutableMacosArm64
+```
+
+To test the local build, run the following:
+
+```shell
+./build/bin/macosArm64/debugExecutable/xcode-kotlin.kexe [command]
+```
 
 ## Libraries
 

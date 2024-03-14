@@ -4,7 +4,7 @@ kotlinx-coroutines = "1.7.3"
 kotlinx-cli = "0.3.6"
 kotlinx-serialization = "1.6.0"
 kermit = "1.2.2"
-gradle-doctor = "0.8.1"
+gradle-doctor = "0.9.2"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
