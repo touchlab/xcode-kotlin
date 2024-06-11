@@ -1,15 +1,14 @@
 package co.touchlab.xcode.cli
 
 import co.touchlab.kermit.Logger
-import co.touchlab.xcode.cli.XcodeHelper.Defaults.nonApplePlugins
 import co.touchlab.xcode.cli.util.BackupHelper
 import co.touchlab.xcode.cli.util.Console
 import co.touchlab.xcode.cli.util.File
-import co.touchlab.xcode.cli.util.fromString
 import co.touchlab.xcode.cli.util.Path
 import co.touchlab.xcode.cli.util.PropertyList
 import co.touchlab.xcode.cli.util.Shell
 import co.touchlab.xcode.cli.util.Version
+import co.touchlab.xcode.cli.util.fromString
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -85,7 +84,7 @@ object XcodeHelper {
             checkNotNull(versionPlist.build?.trim()) { "Couldn't get build number of Xcode at $path." }
         }
 
-        if (Version.fromString(version) >= Version.fromString("15.3")) {
+        if (version15_3_orHigher(version)) {
             return XcodeInstallation(
                 version = version,
                 build = build,
@@ -94,10 +93,11 @@ object XcodeHelper {
         }
 
         val xcodeInfoPath = path / "Contents" / "Info"
-        val pluginCompatabilityIdResult = Shell.exec("/usr/bin/defaults", "read", xcodeInfoPath.value, "DVTPlugInCompatibilityUUID")
-            .checkSuccessful {
-                "Couldn't get plugin compatibility UUID from Xcode at ${path}."
-            }
+        val pluginCompatabilityIdResult =
+            Shell.exec("/usr/bin/defaults", "read", xcodeInfoPath.value, "DVTPlugInCompatibilityUUID")
+                .checkSuccessful {
+                    "Couldn't get plugin compatibility UUID from Xcode at ${path}."
+                }
         val pluginCompatabilityId = checkNotNull(pluginCompatabilityIdResult.output?.trim()) {
             "Couldn't get plugin compatibility ID of Xcode at path: ${path}."
         }
@@ -167,7 +167,12 @@ object XcodeHelper {
         val pluginCompatabilityId: String? = null,
     ) {
         val name: String = "Xcode $version ($build)"
+
+        fun supported(supportedXcodeUuids: Set<String>): Boolean = version15_3_orHigher(version) ||
+                supportedXcodeUuids.contains(pluginCompatabilityId)
     }
+
+    fun version15_3_orHigher(version: String) = Version.fromString(version) >= Version.fromString("15.3")
 
     @Serializable
     private data class SystemProfilerOutput(
@@ -216,6 +221,7 @@ object XcodeHelper {
                 NonApplePlugins(value.dictionary)
             }
         }
+
         fun PropertyList.nonApplePlugins(xcodeVersion: String): NonApplePlugins {
             val backingDictionary = root.dictionary.getOrPut(nonApplePluginsKeyPrefix + xcodeVersion) {
                 PropertyList.Object.Dictionary(
