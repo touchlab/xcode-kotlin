@@ -82,9 +82,8 @@ tasks.register<Exec>("assembleReleaseExecutableMacos") {
     description = "Builds an universal macOS binary for both x86_64 and arm64 architectures."
 }
 
-tasks.register<Copy>("preparePlugin") {
-    group = "build"
-    description = "Prepares plugin and language specification to build dir."
+val copyIdeSupport = tasks.register<Sync>("copyIdeSupport") {
+    description = "Copies Xcode plugin and language specification to build dir."
 
     from(layout.projectDirectory.dir("data")) {
         include("Kotlin.ideplugin/**", "Kotlin.xclangspec")
@@ -96,4 +95,20 @@ tasks.register<Copy>("preparePlugin") {
         )
     }
     into(layout.buildDirectory.dir("share"))
+}
+
+val copyLldbModule = tasks.register<Sync>("copyLldbModule") {
+    description = "Copies LLDB module to build dir."
+
+    mustRunAfter(copyIdeSupport)
+
+    from(layout.projectDirectory.dir("LLDBPlugin/touchlab_kotlin_lldb"))
+    into(layout.buildDirectory.dir("share/Kotlin.ideplugin/Contents/Resources/touchlab_kotlin_lldb"))
+}
+
+tasks.register("preparePlugin") {
+    group = "build"
+    description = "Prepares plugin, language specification and LLDB module in build dir."
+
+    dependsOn(copyIdeSupport, copyLldbModule)
 }
