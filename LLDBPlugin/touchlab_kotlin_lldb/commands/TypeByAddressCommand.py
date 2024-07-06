@@ -1,5 +1,4 @@
 import lldb
-from lldb import SBDebugger, SBExecutionContext, SBCommandReturnObject
 
 from ..util import log
 
@@ -12,10 +11,10 @@ class TypeByAddressCommand:
 
     def __call__(
             self,
-            debugger: SBDebugger,
+            debugger: lldb.SBDebugger,
             command,
-            exe_ctx: SBExecutionContext,
-            result: SBCommandReturnObject
+            exe_ctx: lldb.SBExecutionContext,
+            result: lldb.SBCommandReturnObject
     ):
         log(lambda: "type_by_address_command:{}".format(command))
         result.AppendMessage("DEBUG: {}".format(command))
@@ -27,7 +26,7 @@ class TypeByAddressCommand:
             result.AppendMessage("{}: {:#x}".format(t.name, t.GetStartAddress().GetLoadAddress(target)))
 
 
-def _type_info_by_address(address, debugger: SBDebugger):
+def _type_info_by_address(address, debugger: lldb.SBDebugger):
     target = debugger.GetSelectedTarget()
     process = target.GetProcess()
     thread = process.GetSelectedThread()

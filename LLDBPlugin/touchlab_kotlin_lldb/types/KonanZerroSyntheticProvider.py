@@ -1,12 +1,15 @@
-from lldb import SBValue
+import lldb
 from ..util import log, NULL
 from .KonanBaseSyntheticProvider import KonanBaseSyntheticProvider
 
 
-class KonanZerroSyntheticProvider(KonanBaseSyntheticProvider):
-    def __init__(self, valobj: SBValue):
-        super().__init__(valobj)
+class KonanZerroSyntheticProvider(object):
+    def __init__(self, valobj: lldb.SBValue):
+        super().__init__()
         log(lambda: "KonanZerroSyntheticProvider::__init__ {}".format(valobj.name))
+
+    def update(self):
+        return True
 
     def num_children(self):
         log(lambda: "KonanZerroSyntheticProvider::num_children")

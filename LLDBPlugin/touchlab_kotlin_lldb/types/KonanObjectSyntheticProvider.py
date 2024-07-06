@@ -1,16 +1,26 @@
 import lldb
-from lldb import SBValue
 
 from .base import _TYPE_CONVERSION
 from .KonanBaseSyntheticProvider import KonanBaseSyntheticProvider
 
 
 class KonanObjectSyntheticProvider(KonanBaseSyntheticProvider):
-    def __init__(self, valobj: SBValue):
-        super().__init__(valobj)
+    def __init__(self, valobj: lldb.SBValue, type_info: lldb.value):
+        super().__init__(valobj, type_info)
 
-        self._children_count = self.evaluate_children_count()
-        self._children_names = [self.evaluate_field_name(i) for i in range(self._children_count)]
+        self._children_count = 0
+        self._children_names = []
+
+    def update(self):
+        self._children_count = int(self._type_info.extendedInfo_.fieldsCount_)
+        if self._children_count < 0:
+            self._children_count = 0
+        if self._children_count > 0:
+            field_names = self._type_info.extendedInfo_.fieldNames_
+            self._children_names = [
+                 self.read_cstring(int(field_names[i])) for i in range(self._children_count)
+            ]
+        return True
 
     def num_children(self):
         return self._children_count
@@ -23,6 +33,9 @@ class KonanObjectSyntheticProvider(KonanBaseSyntheticProvider):
         return self._children_names.index(name)
 
     def get_child_at_index(self, index):
-        value_type = self.evaluate_field_type(index)
-        address = self.evaluate_field_address(index)
+        value_type = self._type_info.extendedInfo_.fieldTypes_[index]
+        address = self.get_child_address_at_index(index)
         return _TYPE_CONVERSION[int(value_type)](self, self._valobj, address, self._children_names[index])
+
+    def get_child_address_at_index(self, index):
+        return self._valobj.unsigned + int(self._type_info.extendedInfo_.fieldOffsets_[index])

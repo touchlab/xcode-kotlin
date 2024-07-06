@@ -1,25 +1,58 @@
+from typing import Optional
+
 import lldb
-from lldb import SBValue, SBTypeNameSpecifier
 
 from ..util import strip_quotes, log, evaluate
 from ..cache import LLDBCache
 
-KOTLIN_NATIVE_TYPE = 'ObjHeader *'
-KOTLIN_NATIVE_TYPE_SPECIFIER = SBTypeNameSpecifier(KOTLIN_NATIVE_TYPE, lldb.eMatchTypeNormal)
+KOTLIN_OBJ_HEADER_TYPE = lldb.SBTypeNameSpecifier('ObjHeader *', lldb.eMatchTypeNormal)
+KOTLIN_ARRAY_HEADER_TYPE = lldb.SBTypeNameSpecifier('ArrayHeader *', lldb.eMatchTypeNormal)
 KOTLIN_CATEGORY = 'Kotlin'
 
+# _TYPE_CONVERSION = [
+#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "(__konan_safe_void_t *){:#x}".format(address)),
+#     lambda obj, value, address, name: value.synthetic_child_from_address(name, address, value.type),
+#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(int8_t *){:#x}".format(address)),
+#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(int16_t *){:#x}".format(address)),
+#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(int32_t *){:#x}".format(address)),
+#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(int64_t *){:#x}".format(address)),
+#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(__konan_safe_float_t *){:#x}".format(address)),
+#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(__konan_safe_double_t *){:#x}".format(address)),
+#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(__konan_safe_void_t **){:#x}".format(address)),
+#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(__konan_safe_bool_t *){:#x}".format(address)),
+#     lambda obj, value, address, name: None
+# ]
+
 _TYPE_CONVERSION = [
-    lambda obj, value, address, name: value.CreateValueFromExpression(name, "(__konan_safe_void_t *){:#x}".format(address)),
-    lambda obj, value, address, name: value.CreateValueFromAddress(name, address, value.type),
-    lambda obj, value, address, name: value.CreateValueFromExpression(name, "(int8_t *){:#x}".format(address)),
-    lambda obj, value, address, name: value.CreateValueFromExpression(name, "(int16_t *){:#x}".format(address)),
-    lambda obj, value, address, name: value.CreateValueFromExpression(name, "(int32_t *){:#x}".format(address)),
-    lambda obj, value, address, name: value.CreateValueFromExpression(name, "(int64_t *){:#x}".format(address)),
-    lambda obj, value, address, name: value.CreateValueFromExpression(name, "(__konan_safe_float_t *){:#x}".format(address)),
-    lambda obj, value, address, name: value.CreateValueFromExpression(name, "(__konan_safe_double_t *){:#x}".format(address)),
-    lambda obj, value, address, name: value.CreateValueFromExpression(name, "(__konan_safe_void_t **){:#x}".format(address)),
-    lambda obj, value, address, name: value.CreateValueFromExpression(name, "(__konan_safe_bool_t *){:#x}".format(address)),
-    lambda obj, value, address, name: None
+    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
+                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
+                                                                             lldb.eBasicTypeVoid).GetPointerType()),
+    lambda obj, value, address, name: value.synthetic_child_from_address(name, address, value.type),
+    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
+                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
+                                                                             lldb.eBasicTypeChar)),
+    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
+                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
+                                                                             lldb.eBasicTypeShort)),
+    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
+                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
+                                                                             lldb.eBasicTypeInt)),
+    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
+                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
+                                                                             lldb.eBasicTypeLongLong)),
+    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
+                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
+                                                                             lldb.eBasicTypeFloat)),
+    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
+                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
+                                                                             lldb.eBasicTypeDouble)),
+    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
+                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
+                                                                             lldb.eBasicTypeVoid).GetPointerType()),
+    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
+                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
+                                                                             lldb.eBasicTypeBool)),
+    lambda obj, value, address, name: None,
 ]
 
 _TYPES = [
@@ -39,12 +72,47 @@ _TYPES = [
 def get_runtime_type(variable):
     return strip_quotes(evaluate("(char *)Konan_DebugGetTypeName({:#x})", variable.unsigned).summary)
 
-def _symbol_loaded_address(name, debugger):
-    target = debugger.GetSelectedTarget()
-    process = target.GetProcess()
-    thread = process.GetSelectedThread()
-    frame = thread.GetSelectedFrame()
-    candidates = frame.module.symbol[name]
+
+def type_info_type() -> lldb.SBType:
+    self = LLDBCache.instance()
+    if self._type_info_type is None:
+        self._type_info_type = evaluate('(TypeInfo*)0x0').type
+    return self._type_info_type
+
+
+def obj_header_type() -> lldb.SBType:
+    self = LLDBCache.instance()
+    if self._obj_header_type is None:
+        self._obj_header_type = evaluate('(ObjHeader*)0x0').type
+    return self._obj_header_type
+
+
+def array_header_type() -> lldb.SBType:
+    self = LLDBCache.instance()
+    if self._array_header_type is None:
+        self._array_header_type = evaluate('(ArrayHeader*)0x0').type
+    return self._array_header_type
+
+
+def runtime_type_size() -> lldb.value:
+    self = LLDBCache.instance()
+    if self._runtime_type_size is None:
+        self._runtime_type_size = lldb.value(lldb.debugger.GetSelectedTarget().EvaluateExpression('runtimeTypeSize'))
+    return self._runtime_type_size
+
+
+def runtime_type_alignment() -> lldb.value:
+    self = LLDBCache.instance()
+    if self._runtime_type_alignment is None:
+        self._runtime_type_alignment = lldb.value(
+            lldb.debugger.GetSelectedTarget().EvaluateExpression('runtimeTypeAlignment')
+        )
+    return self._runtime_type_alignment
+
+
+def _symbol_loaded_address(name, debugger) -> int:
+    target: lldb.SBTarget = debugger.GetSelectedTarget()
+    candidates = target.process.selected_thread.GetSelectedFrame().module.symbol[name]
     # take first
     for candidate in candidates:
         address = candidate.GetStartAddress().GetLoadAddress(target)
@@ -54,21 +122,21 @@ def _symbol_loaded_address(name, debugger):
     return 0
 
 
-def GetStringSymbolAddress() -> int:
+def get_string_symbol_address() -> int:
     self = LLDBCache.instance()
     if self._string_symbol_addr is None:
         self._string_symbol_addr = _symbol_loaded_address('kclass:kotlin.String', lldb.debugger)
     return self._string_symbol_addr
 
 
-def GetListSymbolAddress() -> int:
+def get_list_symbol_address() -> int:
     self = LLDBCache.instance()
     if self._list_symbol_addr is None:
         self._list_symbol_addr = _symbol_loaded_address('kclass:kotlin.collections.List', lldb.debugger)
     return self._list_symbol_addr
 
 
-def GetMapSymbolAddress() -> int:
+def get_map_symbol_address() -> int:
     self = LLDBCache.instance()
     if self._map_symbol_addr is None:
         self._map_symbol_addr = _symbol_loaded_address('kclass:kotlin.collections.Map', lldb.debugger)
@@ -90,61 +158,19 @@ class KnownValueType:
         return KnownValueType.entries[raw]
 
 
-def get_known_type(value: SBValue):
-    is_string = '(__konan_safe_int_t)Konan_DebugIsInstance({:#x}, {:#x}) ? {}'.format(
-        value.unsigned,
-        GetStringSymbolAddress(),
-        KnownValueType.STRING,
-    )
-    is_array = '(__konan_safe_int_t)Konan_DebugIsArray({:#x}) ? {}'.format(
-        value.unsigned,
-        KnownValueType.ARRAY,
-    )
-    is_list = '(__konan_safe_int_t)Konan_DebugIsInstance({:#x}, {:#x}) ? {}'.format(
-        value.unsigned,
-        GetListSymbolAddress(),
-        KnownValueType.LIST,
-    )
-    is_map = '(__konan_safe_int_t)Konan_DebugIsInstance({:#x}, {:#x}) ? {}'.format(
-        value.unsigned,
-        GetMapSymbolAddress(),
-        KnownValueType.MAP,
-    )
+def void_type() -> lldb.SBType:
+    return lldb.debugger.GetSelectedTarget().GetBasicType(lldb.eBasicTypeVoid)
 
-    raw = evaluate(
-        '{} : {} : {} : {} : {}',
-        is_string,
-        is_array,
-        is_list,
-        is_map,
-        KnownValueType.ANY,
-    ).unsigned
-    log(lambda: "get_known_type:{}".format(raw))
-    known_type = KnownValueType.value_of(raw)
-    log(lambda: "get_known_type:{}".format(known_type))
-    return known_type
 
-# did_it = False
+def get_type_info(obj: lldb.SBValue) -> Optional[lldb.value]:
+    possible_type_info = obj.CreateValueFromAddress(
+        "typeInfoOrMeta_",
+        obj.Cast(void_type().GetPointerType().GetPointerType()).Dereference().unsigned & ~0x3,
+        type_info_type(),
+    )
+    verification = possible_type_info.Cast(possible_type_info.type.GetPointerType()).Dereference()
 
-def type_info(value):
-    """
-    This method checks self-referencing of pointer of first member of TypeInfo including case when object has an
-    meta-object pointed by TypeInfo. Two lower bits are reserved for memory management needs see runtime/src/main/cpp/Memory.h.
-    """
-    log(lambda: "type_info({:#x}: {})".format(value.unsigned, value.GetTypeName()))
-    if value.GetTypeName() != KOTLIN_NATIVE_TYPE:
+    if possible_type_info.unsigned == verification.unsigned and possible_type_info.IsValid() and possible_type_info.unsigned != 0:
+        return lldb.value(possible_type_info)
+    else:
         return None
-    # global did_it
-    # if not did_it:
-    #     top_level_evaluate(
-    #         'typedef void __konan_safe_void_t;'
-    #         'typedef int __konan_safe_int_t;'
-    #     )
-    #     did_it = True
-    result = evaluate(
-        "*(__konan_safe_void_t**)((uintptr_t)(*(__konan_safe_void_t**){0:#x}) & ~0x3) == **(__konan_safe_void_t***)((uintptr_t)(*(__konan_safe_void_t**){0:#x}) & ~0x3) "
-        "? *(__konan_safe_void_t **)((uintptr_t)(*(__konan_safe_void_t**){0:#x}) & ~0x3) : (__konan_safe_void_t *)0",
-        value.unsigned
-    )
-
-    return result.unsigned if result.IsValid() and result.unsigned != 0 else None

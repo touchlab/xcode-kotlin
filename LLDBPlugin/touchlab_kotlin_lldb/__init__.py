@@ -1,27 +1,34 @@
 import os
+from typing import Optional
 
-from lldb import SBDebugger, SBTypeCategory, SBTypeSummary, eTypeOptionHideValue, SBTypeSynthetic
+import lldb
 
 from .stepping.KonanHook import KonanHook
-from .types import KOTLIN_CATEGORY, KOTLIN_NATIVE_TYPE_SPECIFIER
+from .types.base import KOTLIN_CATEGORY, KOTLIN_OBJ_HEADER_TYPE, KOTLIN_ARRAY_HEADER_TYPE
 from .util.log import log
-from .util.expression import top_level_evaluate
 from .commands import FieldTypeCommand, SymbolByNameCommand, TypeByAddressCommand
 
-from .types import kotlin_object_type_summary, KonanProxyTypeProvider
+from .types import kotlin_object_type_summary, kotlin_objc_class_summary
+from .types.KonanProxyTypeProvider import KonanProxyTypeProvider
+from .types.KonanObjcProxyTypeProvider import KonanObjcProxyTypeProvider
 
 from .cache import LLDBCache
 
 os.environ['CLIENT_TYPE'] = 'Xcode'
 
+KONAN_INIT_PREFIX = '_Konan_init_'
+KONAN_INIT_SUFFIX = '_kexe'
 
-def __lldb_init_module(debugger: SBDebugger, _):
+
+def __lldb_init_module(debugger: lldb.SBDebugger, _):
     log(lambda: "init start")
 
     reset_cache()
     configure_types(debugger)
     register_commands(debugger)
     register_hooks(debugger)
+
+    configure_objc_types(debugger)
 
     log(lambda: "init end")
 
@@ -32,27 +39,102 @@ def reset_cache():
     LLDBCache.reset()
 
 
-def configure_types(debugger: SBDebugger):
-    category: SBTypeCategory = debugger.CreateCategory(KOTLIN_CATEGORY)
-    category.AddTypeSummary(
-        KOTLIN_NATIVE_TYPE_SPECIFIER,
-        SBTypeSummary.CreateWithFunctionName(
-            '{}.{}'.format(__name__, kotlin_object_type_summary.__name__),
-            eTypeOptionHideValue
-        )
-    )
-    category.AddTypeSynthetic(
-        KOTLIN_NATIVE_TYPE_SPECIFIER,
-        SBTypeSynthetic.CreateWithClassName(
-            '{}.{}'.format(__name__, KonanProxyTypeProvider.__name__),
-        )
-    )
+def configure_objc_types(debugger: lldb.SBDebugger):
+    target = debugger.GetDummyTarget()
+    breakpoint = target.BreakpointCreateByRegex("^{}(.*){}$".format(KONAN_INIT_PREFIX, KONAN_INIT_SUFFIX))
+    breakpoint.SetOneShot(True)
+    breakpoint.SetAutoContinue(True)
+    breakpoint.SetScriptCallbackFunction('{}.{}'.format(__name__, configure_objc_types_breakpoint.__name__))
 
-    # noinspection PyArgumentList
+
+def configure_objc_types_breakpoint(frame: lldb.SBFrame, bp_loc: lldb.SBBreakpointLocation, internal_dict):
+    process = frame.thread.process
+    target = process.target
+
+    symbols = target.FindSymbols('_OBJC_CLASS_RO_$_KotlinBase')
+
+    base_class_name: Optional[str] = None
+    for symbol_context in symbols:
+        error = lldb.SBError()
+        name_addr = process.ReadPointerFromMemory(symbol_context.symbol.addr.GetLoadAddress(target) + 6 * 4, error)
+        # TODO: Log error?
+        if not error.success:
+            continue
+        base_class_name = process.ReadCStringFromMemory(name_addr, 128, error)
+        # TODO: Log error?
+        if not error.success:
+            continue
+
+        break
+
+    module_name = frame.symbol.name.removeprefix(KONAN_INIT_PREFIX).removesuffix(KONAN_INIT_SUFFIX)
+
+    specifiers_to_register = [
+        lldb.SBTypeNameSpecifier(
+            '^{}\\.'.format(module_name),
+            lldb.eMatchTypeRegex,
+        ),
+    ]
+
+    if base_class_name is not None:
+        objc_class_prefix = base_class_name.removesuffix("Base")
+        specifiers_to_register.append(
+            lldb.SBTypeNameSpecifier(
+                '^{}'.format(objc_class_prefix),
+                lldb.eMatchTypeRegex,
+            )
+        )
+
+    debugger = target.debugger
+    category = debugger.GetCategory(KOTLIN_CATEGORY)
+
+    for type_specifier in specifiers_to_register:
+        category.AddTypeSummary(
+            type_specifier,
+            lldb.SBTypeSummary.CreateWithFunctionName(
+                '{}.{}'.format(__name__, kotlin_objc_class_summary.__name__),
+                lldb.eTypeOptionHideValue,
+            )
+        )
+        category.AddTypeSynthetic(
+            type_specifier,
+            lldb.SBTypeSynthetic.CreateWithClassName(
+                '{}.{}'.format(__name__, KonanObjcProxyTypeProvider.__name__),
+            )
+        )
+
+    bp_loc.GetBreakpoint().SetEnabled(False)
+
+    return False
+
+
+def configure_types(debugger: lldb.SBDebugger):
+    category = debugger.CreateCategory(KOTLIN_CATEGORY)
+
+    types_to_register = [
+        KOTLIN_OBJ_HEADER_TYPE,
+        KOTLIN_ARRAY_HEADER_TYPE,
+    ]
+
+    for type_to_register in types_to_register:
+        category.AddTypeSummary(
+            type_to_register,
+            lldb.SBTypeSummary.CreateWithFunctionName(
+                '{}.{}'.format(__name__, kotlin_object_type_summary.__name__),
+                lldb.eTypeOptionHideValue
+            )
+        )
+        category.AddTypeSynthetic(
+            type_to_register,
+            lldb.SBTypeSynthetic.CreateWithClassName(
+                '{}.{}'.format(__name__, KonanProxyTypeProvider.__name__),
+            )
+        )
+
     category.SetEnabled(True)
 
 
-def register_commands(debugger: SBDebugger):
+def register_commands(debugger: lldb.SBDebugger):
     commands_to_register = [
         FieldTypeCommand,
         SymbolByNameCommand,
@@ -65,7 +147,7 @@ def register_commands(debugger: SBDebugger):
         )
 
 
-def register_hooks(debugger: SBDebugger):
+def register_hooks(debugger: lldb.SBDebugger):
     # Avoid Kotlin/Native runtime
     debugger.HandleCommand('settings set target.process.thread.step-avoid-regexp ^::Kotlin_')
 

@@ -1,6 +1,6 @@
-from lldb import SBValue
+import lldb
 
-from .base import get_known_type, KnownValueType
+from .base import get_string_symbol_address, get_list_symbol_address, get_map_symbol_address
 from .KonanStringSyntheticProvider import KonanStringSyntheticProvider
 from .KonanArraySyntheticProvider import KonanArraySyntheticProvider
 from .KonanListSyntheticProvider import KonanListSyntheticProvider
@@ -10,39 +10,56 @@ from .KonanMapSyntheticProvider import KonanMapSyntheticProvider
 from ..util import log, DebuggerException
 
 
-def select_provider(valobj: SBValue) -> KonanBaseSyntheticProvider:
+def _is_subtype(obj_type_info: lldb.value, type_info: lldb.value) -> bool:
+    try:
+        TF_INTERFACE = 1 << 2
+        # If it is an interface - check in list of implemented interfaces.
+        if (int(type_info.flags_) & TF_INTERFACE) != 0:
+            for i in range(int(obj_type_info.implementedInterfacesCount_)):
+                if obj_type_info.implementedInterfaces_[i] == type_info:
+                    return True
+            return False
+        while obj_type_info != 0 and obj_type_info != type_info:
+            obj_type_info = obj_type_info.superType_
+
+        return obj_type_info != 0
+    except BaseException as e:
+        import traceback
+        print(traceback.format_exc())
+        return False
+
+
+def select_provider(valobj: lldb.SBValue, type_info: lldb.value) -> KonanBaseSyntheticProvider:
     log(lambda: "[BEGIN] select_provider")
-    known_type = get_known_type(valobj)
 
     try:
-        if known_type == KnownValueType.STRING:
-            ret = KonanStringSyntheticProvider(valobj)
-        elif known_type == KnownValueType.ARRAY:
-            ret = KonanArraySyntheticProvider(valobj)
-        elif known_type == KnownValueType.ANY:
-            ret = KonanObjectSyntheticProvider(valobj)
-        elif known_type == KnownValueType.LIST:
-            ret = KonanListSyntheticProvider(valobj)
-        elif known_type == KnownValueType.MAP:
-            ret = KonanMapSyntheticProvider(valobj)
+        type_info_address = type_info.sbvalue.unsigned
+        # valobj.Cast()
+        if _is_subtype(type_info, lldb.value(valobj.CreateValueFromAddress("kotlin.String", get_string_symbol_address(), type_info.sbvalue.type))):
+            provider = KonanStringSyntheticProvider(valobj, type_info)
+        elif _is_subtype(type_info, lldb.value(valobj.CreateValueFromAddress("kotlin.collections.List", get_list_symbol_address(), type_info.sbvalue.type))):
+            provider = KonanListSyntheticProvider(valobj, type_info)
+        elif _is_subtype(type_info, lldb.value(valobj.CreateValueFromAddress("kotlin.collections.Map", get_map_symbol_address(), type_info.sbvalue.type))):
+            provider = KonanMapSyntheticProvider(valobj, type_info)
+        elif int(type_info.instanceSize_) < 0:
+            provider = KonanArraySyntheticProvider(valobj, type_info)
         else:
-            # TODO: Log warning that we didn't handle a known_type
-            ret = KonanObjectSyntheticProvider(valobj)
-    except DebuggerException as e:
+            provider = KonanObjectSyntheticProvider(valobj, type_info)
+
+    except:
+        import traceback
         import sys
         sys.stderr.write(
-            "Couldn't select provider for value {:#x} (name={}) with known type of {}.\n".format(
+            "Couldn't select provider for value {:#x} (name={}).\n".format(
                 valobj.unsigned,
                 valobj.name,
-                known_type
             )
         )
-        sys.stderr.write(e.msg)
+        traceback.print_exc()
         sys.stderr.write('\nFalling back to KonanObjectSyntheticProvider.\n')
-        ret = KonanObjectSyntheticProvider(valobj)
+        provider = KonanObjectSyntheticProvider(valobj, type_info)
 
-    log(lambda: "[END] select_provider = {} (known_type: {})".format(
-        ret,
-        known_type,
+    log(lambda: "[END] select_provider = {}".format(
+        provider,
     ))
-    return ret
+    return provider

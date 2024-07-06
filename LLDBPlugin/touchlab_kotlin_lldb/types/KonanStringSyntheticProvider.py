@@ -5,11 +5,14 @@ from ..util import kotlin_object_to_string, log
 
 
 class KonanStringSyntheticProvider(KonanBaseSyntheticProvider):
-    def __init__(self, valobj: lldb.SBValue):
-        super().__init__(valobj)
+    def __init__(self, valobj: lldb.SBValue, type_info: lldb.value):
+        super().__init__(valobj, type_info)
 
         s = kotlin_object_to_string(self._process, self._valobj.unsigned)
         self._representation = '"{}"'.format(s) if s else self._valobj.GetValue()
+
+    def update(self):
+        return True
 
     def num_children(self):
         return 0

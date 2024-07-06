@@ -1,29 +1,33 @@
-from lldb import SBValue
+import lldb
 
-from .KonanArraySyntheticProvider import KonanArraySyntheticProvider
-from .KonanObjectSyntheticProvider import KonanObjectSyntheticProvider
-from .KonanProxyTypeProvider import KonanProxyTypeProvider, select_provider
-from .KonanStringSyntheticProvider import KonanStringSyntheticProvider
-from .KonanListSyntheticProvider import KonanListSyntheticProvider
-from .base import KOTLIN_NATIVE_TYPE, KOTLIN_NATIVE_TYPE_SPECIFIER, KOTLIN_CATEGORY, type_info
-from ..util import log, NULL
+from .KonanProxyTypeProvider import select_provider
+from .base import get_type_info
+from ..util import log, NULL, evaluate
 
 
-def kotlin_object_type_summary(valobj: SBValue, internal_dict):
+def kotlin_object_type_summary(valobj: lldb.SBValue, internal_dict):
     """Hook that is run by lldb to display a Kotlin object."""
-    log(lambda: "kotlin_object_type_summary({:#x}: {})".format(valobj.unsigned, valobj.type.name))
-    if valobj.GetTypeName() != KOTLIN_NATIVE_TYPE:
-        if valobj.GetValue() is None:
-            return NULL
-        return valobj.GetValue()
-
+    log(lambda: "kotlin_object_type_summary({:#x}: {}: {})".format(valobj.unsigned, valobj.name, valobj.type.name))
     if valobj.unsigned == 0:
         return NULL
-    tip = internal_dict["type_info"] if "type_info" in internal_dict.keys() else type_info(valobj)
+    type_info = internal_dict["type_info"] if "type_info" in internal_dict.keys() else get_type_info(valobj)
 
-    if not tip:
+    if not type_info:
         return valobj.GetValue()
 
-    provider = select_provider(valobj)
+    provider = select_provider(valobj, type_info)
     log(lambda: "kotlin_object_type_summary({:#x} - {})".format(valobj.unsigned, type(provider).__name__))
+    provider.update()
     return provider.to_string()
+
+
+def kotlin_objc_class_summary(valobj: lldb.SBValue, internal_dict):
+    # """Hook that is run by lldb to display a Kotlin ObjC class wrapper."""
+    if valobj.unsigned == 0:
+        return NULL
+
+    obj = evaluate(
+        'void* __result = 0; (ObjHeader*)Kotlin_ObjCExport_refFromObjC((void*){:#x}, &__result)',
+        valobj.unsigned
+    )
+    return kotlin_object_type_summary(obj, internal_dict)

@@ -1,4 +1,4 @@
-from lldb import SBDebugger, SBTarget, SBProcess, SBExecutionContext, SBStream
+import lldb
 
 from .KonanStepIn import KonanStepIn
 from .KonanStepOut import KonanStepOut
@@ -14,10 +14,10 @@ PLAN_FROM_STOP_REASON = {
 
 
 class KonanHook:
-    def __init__(self, target: SBTarget, extra_args, _):
+    def __init__(self, target: lldb.SBTarget, extra_args, _):
         pass
 
-    def handle_stop(self, execution_context: SBExecutionContext, stream: SBStream) -> bool:
+    def handle_stop(self, execution_context: lldb.SBExecutionContext, stream: lldb.SBStream) -> bool:
         is_bridging_functions_skip_enabled = not execution_context.target.GetEnvironment().Get(
             KONAN_LLDB_DONT_SKIP_BRIDGING_FUNCTIONS
         )
