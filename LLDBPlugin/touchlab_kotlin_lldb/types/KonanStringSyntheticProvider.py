@@ -1,15 +1,13 @@
 import lldb
 
+from .base import array_header_type
 from .KonanBaseSyntheticProvider import KonanBaseSyntheticProvider
 from ..util import kotlin_object_to_string, log
 
 
 class KonanStringSyntheticProvider(KonanBaseSyntheticProvider):
     def __init__(self, valobj: lldb.SBValue, type_info: lldb.value):
-        super().__init__(valobj, type_info)
-
-        s = kotlin_object_to_string(self._process, self._valobj.unsigned)
-        self._representation = '"{}"'.format(s) if s else self._valobj.GetValue()
+        super().__init__(valobj.Cast(array_header_type()), type_info)
 
     def update(self):
         return True
@@ -27,4 +25,5 @@ class KonanStringSyntheticProvider(KonanBaseSyntheticProvider):
         return None
 
     def to_string(self):
-        return self._representation
+        s = kotlin_object_to_string(self._process, self._valobj.unsigned)
+        return '"{}"'.format(s) if s else self._valobj.GetValue()

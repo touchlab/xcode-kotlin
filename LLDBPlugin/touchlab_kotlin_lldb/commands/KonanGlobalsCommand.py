@@ -2,7 +2,7 @@ import re
 
 from lldb import SBDebugger, SBExecutionContext, SBCommandReturnObject
 
-from ..types import kotlin_object_type_summary
+from ..types.summary import kotlin_object_type_summary
 from ..util.expression import evaluate
 
 

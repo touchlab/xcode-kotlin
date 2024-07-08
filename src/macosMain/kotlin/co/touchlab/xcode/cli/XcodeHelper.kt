@@ -6,9 +6,8 @@ import co.touchlab.xcode.cli.util.Console
 import co.touchlab.xcode.cli.util.File
 import co.touchlab.xcode.cli.util.Path
 import co.touchlab.xcode.cli.util.PropertyList
+import co.touchlab.xcode.cli.util.SemVer
 import co.touchlab.xcode.cli.util.Shell
-import co.touchlab.xcode.cli.util.Version
-import co.touchlab.xcode.cli.util.fromString
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -109,7 +108,7 @@ object XcodeHelper {
         )
     }
 
-    fun allowKotlinPlugin(pluginVersion: KotlinVersion, xcodeInstallations: List<XcodeInstallation>) {
+    fun allowKotlinPlugin(pluginVersion: SemVer, xcodeInstallations: List<XcodeInstallation>) {
         logger.i { "Adding plugin to allowed list in Xcode defaults." }
         modifyingXcodeDefaults("BeforeAdd") {
             for (installation in xcodeInstallations) {
@@ -118,7 +117,7 @@ object XcodeHelper {
         }
     }
 
-    fun skipKotlinPlugin(pluginVersion: KotlinVersion, xcodeInstallations: List<XcodeInstallation>) {
+    fun skipKotlinPlugin(pluginVersion: SemVer, xcodeInstallations: List<XcodeInstallation>) {
         logger.i { "Adding plugin to skipped list in Xcode defaults." }
         modifyingXcodeDefaults("BeforeSkip") {
             for (installation in xcodeInstallations) {
@@ -172,7 +171,7 @@ object XcodeHelper {
                 supportedXcodeUuids.contains(pluginCompatabilityId)
     }
 
-    fun version15_3_orHigher(version: String) = Version.fromString(version) >= Version.fromString("15.3")
+    fun version15_3_orHigher(version: String) = SemVer.parse(version) >= SemVer.parse("15.3")
 
     @Serializable
     private data class SystemProfilerOutput(

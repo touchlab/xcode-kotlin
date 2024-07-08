@@ -17,16 +17,16 @@ object PluginManager {
     private val logger = Logger.withTag("PluginManager")
     private val fixXcode15Timeout = 10
 
-    val bundledVersion: Version
+    val bundledVersion: SemVer
         get() {
             val pluginInfo = PropertyList.create(pluginSourceInfoFile)
-            return Version.fromString(pluginInfo.root.dictionary.getValue(pluginVersionInfoKey).string.value)
+            return SemVer.parse(pluginInfo.root.dictionary.getValue(pluginVersionInfoKey).string.value)
         }
 
-    val installedVersion: Version?
+    val installedVersion: SemVer?
         get() = if (pluginTargetFile.exists()) {
             val pluginInfo = PropertyList.create(pluginTargetInfoFile)
-            pluginInfo.root.dictionaryOrNull?.get(pluginVersionInfoKey)?.stringOrNull?.value?.let(Version::fromString)
+            pluginInfo.root.dictionaryOrNull?.get(pluginVersionInfoKey)?.stringOrNull?.value?.let(SemVer::parseOrNull)
         } else {
             null
         }
@@ -54,14 +54,14 @@ object PluginManager {
         pluginSourceFile.copy(pluginTargetFile.path)
     }
 
-    fun enable(version: Version, xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
+    fun enable(version: SemVer, xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
         logger.i { "Removing Kotlin Plugin defaults so we can add it to allowed." }
         XcodeHelper.removeKotlinPluginFromDefaults()
         logger.i { "Allowing Kotlin Plugin" }
         XcodeHelper.allowKotlinPlugin(version, xcodeInstallations)
     }
 
-    fun disable(version: Version, xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
+    fun disable(version: SemVer, xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
         logger.i { "Removing Kotlin Plugin defaults so we can add it to skipped." }
         XcodeHelper.removeKotlinPluginFromDefaults()
         logger.i { "We need Xcode to skip the plugin, so it doesn't crash." }

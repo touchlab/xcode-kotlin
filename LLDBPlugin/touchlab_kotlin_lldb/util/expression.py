@@ -53,7 +53,7 @@ def declare_helper_types():
             '#include "{}/konan_debug.h"'.format(script_dir),
             options
         )
-        print('{}'.format(result))
+        log(lambda: '{}'.format(result))
         # top_level_evaluate(
         #     ,
         #     # 'typedef void __konan_safe_void_t;'

@@ -11,48 +11,36 @@ from ..util.expression import EXPRESSION_OPTIONS
 
 class KonanMapSyntheticProvider(KonanObjectSyntheticProvider):
     def __init__(self, valobj: lldb.SBValue, type_info: lldb.value):
+        self._keys: KonanArraySyntheticProvider = None  # type: ignore
+        self._values: KonanArraySyntheticProvider = None  # type: ignore
+
         super().__init__(valobj, type_info)
-
-        super().update()
-
-        keys: Optional[KonanArraySyntheticProvider] = None
-        values: Optional[KonanArraySyntheticProvider] = None
-
-        # TODO: Should we move this to `update`?
-        for i, name in enumerate(self._children_names):
-            if name == 'keysArray':
-                keys = self._create_backing(name, i)
-            elif name == 'valuesArray':
-                values = self._create_backing(name, i)
-
-        if keys is None or values is None:
-            raise DebuggerException(
-                "Couldn't find backing for map {:#x}, name: {}".format(self._valobj.unsigned, self._valobj.name)
-            )
-
-        self._keys = keys
-        self._values = values
-
-    def _create_backing(self, name: str, index: int) -> Optional[KonanArraySyntheticProvider]:
-        address = self.get_child_address_at_index(index)
-        backing_value = self._valobj.CreateValueFromAddress(
-            name,
-            address,
-            self._valobj.type,
-        )
-        child_type_info = get_type_info(backing_value)
-        if child_type_info is None:
-            return None
-        else:
-            return KonanArraySyntheticProvider(backing_value, child_type_info)
 
     def update(self):
         super().update()
 
-        self._keys.update()
-        self._values.update()
+        if self._keys is None or self._values is None:
+            keys: Optional[KonanArraySyntheticProvider] = None
+            values: Optional[KonanArraySyntheticProvider] = None
 
-        return True
+            for index, name in enumerate(self._children_names):
+                if name == 'keysArray':
+                    keys = self._create_backing(index, name)
+                elif name == 'valuesArray':
+                    values = self._create_backing(index, name)
+
+            if keys is None or values is None:
+                raise DebuggerException(
+                    "Couldn't find backing for map {:#x}, name: {}".format(self._valobj.unsigned, self._valobj.name)
+                )
+
+            self._keys = keys
+            self._values = values
+        else:
+            self._keys.update()
+            self._values.update()
+
+        return False
 
     def num_children(self):
         return self._keys.num_children()
@@ -81,3 +69,16 @@ class KonanMapSyntheticProvider(KonanObjectSyntheticProvider):
             return '1 key/value pair'
         else:
             return '{} key/value pairs'.format(children_count)
+
+    def _create_backing(self, index: int, name: str) -> Optional[KonanArraySyntheticProvider]:
+        address = self.get_child_address_at_index(index)
+        backing_value = self._valobj.CreateValueFromAddress(
+            name,
+            address,
+            self._valobj.type,
+        )
+        child_type_info = get_type_info(backing_value)
+        if child_type_info is None:
+            return None
+        else:
+            return KonanArraySyntheticProvider(backing_value, child_type_info)

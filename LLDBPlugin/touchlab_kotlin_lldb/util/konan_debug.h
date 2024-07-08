@@ -1,6 +1,9 @@
 #ifndef KONAN_DEBUG_H
 #define KONAN_DEBUG_H
 
+// This is true for K/N runtime that supports ObjC, so for our case it should always be 1.
+#define KONAN_TYPE_INFO_HAS_WRITABLE_PART 1
+
 #if KONAN_TYPE_INFO_HAS_WRITABLE_PART
 struct WritableTypeInfo;
 #endif
@@ -144,7 +147,7 @@ struct TypeInfo {
     void (*processObjectInMark)(void*,ObjHeader*);
 
     // Required alignment of instance
-//    uint32_t instanceAlignment_;
+    uint32_t instanceAlignment_;
 
 
     // vtable starts just after declared contents of the TypeInfo:
@@ -200,47 +203,12 @@ int runtimeTypeAlignment[] = {
     16                   // VECTOR128
 };
 
-//typedef struct Konan_ObjectField { void* address; int type; char* name; } Konan_ObjectField;
-//typedef struct Konan_ObjectFieldList { int count; Konan_ObjectField* fields; } Konan_ObjectFieldList;
-//
-//Konan_ObjectFieldList Konan_GetObjectFields(ObjHeader* object) {
-//    int field_count = (int)Konan_DebugGetFieldCount(object);
-//    Konan_ObjectField* fields = (Konan_ObjectField*)malloc(field_count * sizeof(Konan_ObjectField));
-//    for (int i = 0; i < field_count; i++) {
-//        void* address = (void*)Konan_DebugGetFieldAddress(object, i);
-//        int type = (int)Konan_DebugGetFieldType(object, i);
-//        char* name = (char*)Konan_DebugGetFieldName(object, i);
-//
-//        fields[i] = (Konan_ObjectField){
-//            address, type, name
-//        };
-//    }
-//    return (Konan_ObjectFieldList){
-//        field_count, fields
-//    };
-//}
-
-TypeInfo* Konan_DebugGetTypeInfo(ObjHeader* object) {
-    void* possible_type_info = *(void**)((uintptr_t)(*(void**)object) & ~0x3);
-    if (possible_type_info == *(void**)possible_type_info) {
-        return (TypeInfo*)possible_type_info;
-    } else {
-        return (TypeInfo*)0;
-    }
-}
-
-#endif // KONAN_DEBUG_H
-
-
-//static inline ObjHeader* Kotlin_ObjCExport_refFromObjC(id obj, ObjHeader** __result__) {
-//    ObjHeader* __result = name(obj, __result__);
-//    return __result;
-//}
-
-extern class BackRefFromAssociatedObject {
+class BackRefFromAssociatedObject {
  public:
   union {
     void* ref_; // Regular object.
     ObjHeader* permanentObj_; // Permanent object.
   };
 };
+
+#endif // KONAN_DEBUG_H

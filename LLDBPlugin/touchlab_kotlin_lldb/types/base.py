@@ -9,63 +9,49 @@ KOTLIN_OBJ_HEADER_TYPE = lldb.SBTypeNameSpecifier('ObjHeader *', lldb.eMatchType
 KOTLIN_ARRAY_HEADER_TYPE = lldb.SBTypeNameSpecifier('ArrayHeader *', lldb.eMatchTypeNormal)
 KOTLIN_CATEGORY = 'Kotlin'
 
-# _TYPE_CONVERSION = [
-#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "(__konan_safe_void_t *){:#x}".format(address)),
-#     lambda obj, value, address, name: value.synthetic_child_from_address(name, address, value.type),
-#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(int8_t *){:#x}".format(address)),
-#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(int16_t *){:#x}".format(address)),
-#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(int32_t *){:#x}".format(address)),
-#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(int64_t *){:#x}".format(address)),
-#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(__konan_safe_float_t *){:#x}".format(address)),
-#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(__konan_safe_double_t *){:#x}".format(address)),
-#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(__konan_safe_void_t **){:#x}".format(address)),
-#     lambda obj, value, address, name: value.CreateValueFromExpression(name, "*(__konan_safe_bool_t *){:#x}".format(address)),
-#     lambda obj, value, address, name: None
-# ]
-
 _TYPE_CONVERSION = [
-    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
-                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
-                                                                             lldb.eBasicTypeVoid).GetPointerType()),
-    lambda obj, value, address, name: value.synthetic_child_from_address(name, address, value.type),
-    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
-                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
-                                                                             lldb.eBasicTypeChar)),
-    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
-                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
-                                                                             lldb.eBasicTypeShort)),
-    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
-                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
-                                                                             lldb.eBasicTypeInt)),
-    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
-                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
-                                                                             lldb.eBasicTypeLongLong)),
-    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
-                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
-                                                                             lldb.eBasicTypeFloat)),
-    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
-                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
-                                                                             lldb.eBasicTypeDouble)),
-    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
-                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
-                                                                             lldb.eBasicTypeVoid).GetPointerType()),
-    lambda obj, value, address, name: value.synthetic_child_from_address(name, address,
-                                                                         lldb.debugger.GetSelectedTarget().GetBasicType(
-                                                                             lldb.eBasicTypeBool)),
+    # INVALID
+    lambda obj, value, address, name: value.synthetic_child_from_address(
+        name, address, lldb.debugger.GetSelectedTarget().GetBasicType(lldb.eBasicTypeVoid).GetPointerType()
+    ),
+    # OBJECT
+    lambda obj, value, address, name: value.synthetic_child_from_address(
+        name, address, obj_header_type()
+    ),
+    # INT8
+    lambda obj, value, address, name: value.synthetic_child_from_address(
+        name, address, lldb.debugger.GetSelectedTarget().GetBasicType(lldb.eBasicTypeChar)
+    ),
+    # INT16
+    lambda obj, value, address, name: value.synthetic_child_from_address(
+        name, address, lldb.debugger.GetSelectedTarget().GetBasicType(lldb.eBasicTypeShort)
+    ),
+    # INT32
+    lambda obj, value, address, name: value.synthetic_child_from_address(
+        name, address, lldb.debugger.GetSelectedTarget().GetBasicType(lldb.eBasicTypeInt)
+    ),
+    # INT64
+    lambda obj, value, address, name: value.synthetic_child_from_address(
+        name, address, lldb.debugger.GetSelectedTarget().GetBasicType(lldb.eBasicTypeLongLong)
+    ),
+    # FLOAT32
+    lambda obj, value, address, name: value.synthetic_child_from_address(
+        name, address, lldb.debugger.GetSelectedTarget().GetBasicType(lldb.eBasicTypeFloat)
+    ),
+    # FLOAT64
+    lambda obj, value, address, name: value.synthetic_child_from_address(
+        name, address, lldb.debugger.GetSelectedTarget().GetBasicType(lldb.eBasicTypeDouble)
+    ),
+    # NATIVE_PTR
+    lambda obj, value, address, name: value.synthetic_child_from_address(
+        name, address, lldb.debugger.GetSelectedTarget().GetBasicType(lldb.eBasicTypeVoid).GetPointerType()
+    ),
+    # BOOLEAN
+    lambda obj, value, address, name: value.synthetic_child_from_address(
+        name, address, lldb.debugger.GetSelectedTarget().GetBasicType(lldb.eBasicTypeBool)
+    ),
+    # TODO: VECTOR128
     lambda obj, value, address, name: None,
-]
-
-_TYPES = [
-    lambda x: x.GetType().GetBasicType(lldb.eBasicTypeVoid).GetPointerType(),
-    lambda x: x.GetType(),
-    lambda x: x.GetType().GetBasicType(lldb.eBasicTypeChar),
-    lambda x: x.GetType().GetBasicType(lldb.eBasicTypeShort),
-    lambda x: x.GetType().GetBasicType(lldb.eBasicTypeInt),
-    lambda x: x.GetType().GetBasicType(lldb.eBasicTypeLongLong),
-    lambda x: x.GetType().GetBasicType(lldb.eBasicTypeFloat),
-    lambda x: x.GetType().GetBasicType(lldb.eBasicTypeDouble),
-    lambda x: x.GetType().GetBasicType(lldb.eBasicTypeVoid).GetPointerType(),
-    lambda x: x.GetType().GetBasicType(lldb.eBasicTypeBool)
 ]
 
 
@@ -97,7 +83,7 @@ def array_header_type() -> lldb.SBType:
 def runtime_type_size() -> lldb.value:
     self = LLDBCache.instance()
     if self._runtime_type_size is None:
-        self._runtime_type_size = lldb.value(lldb.debugger.GetSelectedTarget().EvaluateExpression('runtimeTypeSize'))
+        self._runtime_type_size = lldb.value(evaluate('runtimeTypeSize'))
     return self._runtime_type_size
 
 
@@ -105,17 +91,17 @@ def runtime_type_alignment() -> lldb.value:
     self = LLDBCache.instance()
     if self._runtime_type_alignment is None:
         self._runtime_type_alignment = lldb.value(
-            lldb.debugger.GetSelectedTarget().EvaluateExpression('runtimeTypeAlignment')
+            evaluate('runtimeTypeAlignment')
         )
     return self._runtime_type_alignment
 
 
-def _symbol_loaded_address(name, debugger) -> int:
+def _symbol_loaded_address(name: str, debugger: lldb.SBDebugger) -> int:
     target: lldb.SBTarget = debugger.GetSelectedTarget()
-    candidates = target.process.selected_thread.GetSelectedFrame().module.symbol[name]
+    candidates = target.FindSymbols(name)
     # take first
     for candidate in candidates:
-        address = candidate.GetStartAddress().GetLoadAddress(target)
+        address = candidate.symbol.GetStartAddress().GetLoadAddress(target)
         log(lambda: "_symbol_loaded_address:{} {:#x}".format(name, address))
         return address
 

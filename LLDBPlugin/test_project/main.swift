@@ -15,6 +15,12 @@ let dataObject = DataObject.shared
 let basicList = [basic]
 let dataList = [data]
 let dataMap = ["hello": data]
+let test = Test()
+let testList = [test]
 
 let nsBasic = basic as NSObject
 
+
+struct Test {
+    let x = Foo()
+}

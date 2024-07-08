@@ -1,6 +1,6 @@
 import lldb
 
-from .KonanProxyTypeProvider import select_provider
+from .select_provider import select_provider
 from .base import get_type_info
 from ..util import log, NULL, evaluate
 

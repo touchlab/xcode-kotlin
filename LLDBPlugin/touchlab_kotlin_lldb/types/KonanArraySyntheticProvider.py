@@ -7,13 +7,14 @@ from .KonanBaseSyntheticProvider import KonanBaseSyntheticProvider
 
 class KonanArraySyntheticProvider(KonanBaseSyntheticProvider):
     def __init__(self, valobj: lldb.SBValue, type_info: lldb.value):
-        super().__init__(valobj.Cast(array_header_type()), type_info)
-
         self._children_count = 0
 
-    def update(self):
+        super().__init__(valobj.Cast(array_header_type()), type_info)
+
+    def update(self) -> bool:
+        super().update()
         self._children_count = int(self._val.count_)
-        return True
+        return False
 
     def num_children(self):
         return self._children_count
@@ -29,7 +30,7 @@ class KonanArraySyntheticProvider(KonanBaseSyntheticProvider):
     def get_child_at_index(self, index):
 
         value_type = -int(self._type_info.extendedInfo_.fieldsCount_)
-        address = self._valobj.unsigned + _align_up(
+        address = self._valobj.unsigned + self._align_up(
             self._valobj.type.GetPointeeType().GetByteSize(),
             int(runtime_type_alignment()[value_type])
         ) + index * int(runtime_type_size()[value_type])
@@ -41,6 +42,6 @@ class KonanArraySyntheticProvider(KonanBaseSyntheticProvider):
         else:
             return '{} values'.format(self._children_count)
 
-
-def _align_up(size, alignment):
-    return (size + alignment - 1) & ~(alignment - 1)
+    @staticmethod
+    def _align_up(size, alignment):
+        return (size + alignment - 1) & ~(alignment - 1)

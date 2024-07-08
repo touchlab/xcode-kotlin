@@ -1,26 +1,27 @@
 import lldb
 
+
 from .base import _TYPE_CONVERSION
 from .KonanBaseSyntheticProvider import KonanBaseSyntheticProvider
 
 
 class KonanObjectSyntheticProvider(KonanBaseSyntheticProvider):
     def __init__(self, valobj: lldb.SBValue, type_info: lldb.value):
-        super().__init__(valobj, type_info)
-
         self._children_count = 0
         self._children_names = []
 
-    def update(self):
+        super().__init__(valobj, type_info)
+
+    def update(self) -> bool:
         self._children_count = int(self._type_info.extendedInfo_.fieldsCount_)
         if self._children_count < 0:
             self._children_count = 0
         if self._children_count > 0:
             field_names = self._type_info.extendedInfo_.fieldNames_
             self._children_names = [
-                 self.read_cstring(int(field_names[i])) for i in range(self._children_count)
+                self.read_cstring(int(field_names[i])) for i in range(self._children_count)
             ]
-        return True
+        return False
 
     def num_children(self):
         return self._children_count
@@ -39,3 +40,4 @@ class KonanObjectSyntheticProvider(KonanBaseSyntheticProvider):
 
     def get_child_address_at_index(self, index):
         return self._valobj.unsigned + int(self._type_info.extendedInfo_.fieldOffsets_[index])
+

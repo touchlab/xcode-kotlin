@@ -1,21 +1,22 @@
-from typing import Optional
-
 import lldb
 
-from ..util import log, DebuggerException, kotlin_object_to_string, evaluate
+from ..util import DebuggerException, kotlin_object_to_string
 
 
 class KonanBaseSyntheticProvider(object):
     def __init__(self, valobj: lldb.SBValue, type_info: lldb.value):
-        super().__init__()
-
         self._valobj: lldb.SBValue = valobj
         self._val: lldb.value = lldb.value(valobj.GetNonSyntheticValue())
         self._type_info: lldb.value = type_info
         self._process: lldb.SBProcess = lldb.debugger.GetSelectedTarget().process
 
-    def update(self) -> Optional[bool]:
-        pass
+        super().__init__()
+
+        # We need to call it ourselves, because Xcode doesn't seem to call it in some cases
+        self.update()
+
+    def update(self) -> bool:
+        return False
 
     def read_cstring(self, address: int) -> str:
         error = lldb.SBError()

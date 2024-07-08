@@ -1,6 +1,6 @@
 from lldb import SBDebugger, SBExecutionContext, SBCommandReturnObject
 
-from ..types.KonanProxyTypeProvider import KonanProxyTypeProvider
+from ..types.proxy import KonanProxyTypeProvider
 from ..types.base import get_runtime_type
 
 

@@ -8,15 +8,15 @@ from .types.base import KOTLIN_CATEGORY, KOTLIN_OBJ_HEADER_TYPE, KOTLIN_ARRAY_HE
 from .util.log import log
 from .commands import FieldTypeCommand, SymbolByNameCommand, TypeByAddressCommand
 
-from .types import kotlin_object_type_summary, kotlin_objc_class_summary
-from .types.KonanProxyTypeProvider import KonanProxyTypeProvider
-from .types.KonanObjcProxyTypeProvider import KonanObjcProxyTypeProvider
+from .types.summary import kotlin_object_type_summary, kotlin_objc_class_summary
+from .types.proxy import KonanProxyTypeProvider, KonanObjcProxyTypeProvider
 
 from .cache import LLDBCache
 
 os.environ['CLIENT_TYPE'] = 'Xcode'
 
 KONAN_INIT_PREFIX = '_Konan_init_'
+KONAN_INIT_MODULE_NAME = '[0-9a-zA-Z_]+'
 KONAN_INIT_SUFFIX = '_kexe'
 
 
@@ -41,7 +41,9 @@ def reset_cache():
 
 def configure_objc_types(debugger: lldb.SBDebugger):
     target = debugger.GetDummyTarget()
-    breakpoint = target.BreakpointCreateByRegex("^{}(.*){}$".format(KONAN_INIT_PREFIX, KONAN_INIT_SUFFIX))
+    breakpoint = target.BreakpointCreateByRegex(
+        "^{}({})({})?$".format(KONAN_INIT_PREFIX, KONAN_INIT_MODULE_NAME, KONAN_INIT_SUFFIX)
+    )
     breakpoint.SetOneShot(True)
     breakpoint.SetAutoContinue(True)
     breakpoint.SetScriptCallbackFunction('{}.{}'.format(__name__, configure_objc_types_breakpoint.__name__))
@@ -68,6 +70,8 @@ def configure_objc_types_breakpoint(frame: lldb.SBFrame, bp_loc: lldb.SBBreakpoi
         break
 
     module_name = frame.symbol.name.removeprefix(KONAN_INIT_PREFIX).removesuffix(KONAN_INIT_SUFFIX)
+    if module_name == "stdlib":
+        return False
 
     specifiers_to_register = [
         lldb.SBTypeNameSpecifier(

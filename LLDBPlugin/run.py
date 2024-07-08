@@ -12,6 +12,7 @@ if gradle_exit_code != 0:
     exit(gradle_exit_code)
 
 exe = 'test_project/build/swift/app'
+framework_path = 'test_project/build/bin/macosArm64/debugFramework'
 
 # Initialize the debugger before making any API calls.
 lldb.SBDebugger.Initialize()
@@ -35,14 +36,14 @@ target: lldb.SBTarget = debugger.CreateTargetWithFileAndArch(exe, lldb.LLDB_ARCH
 
 if target:
     # target.BreakpointCreateByLocation("main.swift", 14)
-    target.BreakpointCreateByLocation('main.kt', 47)
+    target.BreakpointCreateByLocation('main.kt', 30)
 
-    process: lldb.SBProcess = target.LaunchSimple(None, None, os.getcwd())
+    process: lldb.SBProcess = target.LaunchSimple(None, ["DYLD_FRAMEWORK_PATH={}".format(framework_path)], os.getcwd())
 
     if process:
         import time
         start = time.perf_counter()
-        debugger.HandleCommand('fr v --ptr-depth 16')
+        debugger.HandleCommand('fr v --ptr-depth 16 -- string')
         print('HandleCommand took {:.6}s'.format(time.perf_counter() - start))
         process.Continue()
         # debugger.HandleCommand('fr v --ptr-depth 16 -- data')

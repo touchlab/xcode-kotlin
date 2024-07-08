@@ -5767,19 +5767,19 @@ class SBLineEntry:
         r"""__ne__(SBLineEntry self, SBLineEntry rhs) -> bool"""
         ...
     
-    def GetDescription(self, description):
+    def GetDescription(self, description: SBStream) -> bool:
         r"""GetDescription(SBLineEntry self, SBStream description) -> bool"""
         ...
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""__repr__(SBLineEntry self) -> std::string"""
         ...
     
-    file = ...
-    line = ...
-    column = ...
-    addr = ...
-    end_addr = ...
+    file: SBFileSpec = ...
+    line: int = ...
+    column: int = ...
+    addr: SBAddress = ...
+    end_addr: SBAddress = ...
     def __eq__(self, rhs) -> bool:
         ...
     
@@ -6259,31 +6259,31 @@ class SBModule:
         """
         ...
     
-    def GetNumSymbols(self):
+    def GetNumSymbols(self) -> int:
         r"""GetNumSymbols(SBModule self) -> size_t"""
         ...
     
-    def GetSymbolAtIndex(self, idx):
+    def GetSymbolAtIndex(self, idx) -> SBSymbol:
         r"""GetSymbolAtIndex(SBModule self, size_t idx) -> SBSymbol"""
         ...
     
-    def FindSymbol(self, *args):
+    def FindSymbol(self, *args) -> SBSymbol:
         r"""FindSymbol(SBModule self, char const * name, lldb::SymbolType type=eSymbolTypeAny) -> SBSymbol"""
         ...
     
-    def FindSymbols(self, *args):
+    def FindSymbols(self, *args) -> SBSymbolContextList:
         r"""FindSymbols(SBModule self, char const * name, lldb::SymbolType type=eSymbolTypeAny) -> SBSymbolContextList"""
         ...
     
-    def GetNumSections(self):
+    def GetNumSections(self) -> int:
         r"""GetNumSections(SBModule self) -> size_t"""
         ...
     
-    def GetSectionAtIndex(self, idx):
+    def GetSectionAtIndex(self, idx) -> SBSection:
         r"""GetSectionAtIndex(SBModule self, size_t idx) -> SBSection"""
         ...
     
-    def FindFunctions(self, *args):
+    def FindFunctions(self, *args) -> SBSymbolContextList:
         r"""
         FindFunctions(SBModule self, char const * name, uint32_t name_type_mask=eFunctionNameTypeAny) -> SBSymbolContextList
 
@@ -6344,23 +6344,23 @@ class SBModule:
         """
         ...
     
-    def FindFirstType(self, name):
+    def FindFirstType(self, name) -> SBType:
         r"""FindFirstType(SBModule self, char const * name) -> SBType"""
         ...
     
-    def FindTypes(self, type):
+    def FindTypes(self, type) -> SBTypeList:
         r"""FindTypes(SBModule self, char const * type) -> SBTypeList"""
         ...
     
-    def GetTypeByID(self, uid):
+    def GetTypeByID(self, uid) -> SBType:
         r"""GetTypeByID(SBModule self, lldb::user_id_t uid) -> SBType"""
         ...
     
-    def GetBasicType(self, type):
+    def GetBasicType(self, type) -> SBType:
         r"""GetBasicType(SBModule self, lldb::BasicType type) -> SBType"""
         ...
     
-    def GetTypes(self, *args):
+    def GetTypes(self, *args) -> SBTypeList:
         r"""
         GetTypes(SBModule self, uint32_t type_mask=eTypeClassAny) -> SBTypeList
 
@@ -8607,19 +8607,19 @@ class SBSymbolContextList:
         ...
     
     __bool__ = ...
-    def IsValid(self):
+    def IsValid(self) -> bool:
         r"""IsValid(SBSymbolContextList self) -> bool"""
         ...
     
-    def GetSize(self):
+    def GetSize(self) -> int:
         r"""GetSize(SBSymbolContextList self) -> uint32_t"""
         ...
     
-    def GetContextAtIndex(self, idx):
+    def GetContextAtIndex(self, idx) -> SBSymbolContext:
         r"""GetContextAtIndex(SBSymbolContextList self, uint32_t idx) -> SBSymbolContext"""
         ...
     
-    def GetDescription(self, description):
+    def GetDescription(self, description: SBStream) -> bool:
         r"""GetDescription(SBSymbolContextList self, SBStream description) -> bool"""
         ...
     
@@ -8634,7 +8634,7 @@ class SBSymbolContextList:
         r"""Clear(SBSymbolContextList self)"""
         ...
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""__repr__(SBSymbolContextList self) -> std::string"""
         ...
     
@@ -8643,10 +8643,10 @@ class SBSymbolContextList:
         object.'''
         ...
     
-    def __len__(self): # -> int:
+    def __len__(self) -> int:
         ...
     
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> SBSymbolContext:
         ...
     
     def get_module_array(self): # -> list[Any]:
@@ -11652,27 +11652,27 @@ class SBTypeList:
         ...
     
     __bool__ = ...
-    def IsValid(self):
+    def IsValid(self) -> bool:
         r"""IsValid(SBTypeList self) -> bool"""
         ...
     
-    def Append(self, type):
+    def Append(self, type: SBType):
         r"""Append(SBTypeList self, SBType type)"""
         ...
     
-    def GetTypeAtIndex(self, index):
+    def GetTypeAtIndex(self, index) -> SBType:
         r"""GetTypeAtIndex(SBTypeList self, uint32_t index) -> SBType"""
         ...
     
-    def GetSize(self):
+    def GetSize(self) -> int:
         r"""GetSize(SBTypeList self) -> uint32_t"""
         ...
     
-    def __iter__(self): # -> Generator[Any, Any, None]:
+    def __iter__(self) -> Iterator[SBType]:
         '''Iterate over all types in a lldb.SBTypeList object.'''
         ...
     
-    def __len__(self):
+    def __len__(self) -> int:
         '''Return the number of types in a lldb.SBTypeList object.'''
         ...
     
