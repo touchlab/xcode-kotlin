@@ -33,12 +33,12 @@ class KonanMapSyntheticProvider(KonanObjectSyntheticProvider):
                 raise DebuggerException(
                     "Couldn't find backing for map {:#x}, name: {}".format(self._valobj.unsigned, self._valobj.name)
                 )
+            else:
+                self._keys = keys
+                self._values = values
 
-            self._keys = keys
-            self._values = values
-        else:
-            self._keys.update()
-            self._values.update()
+        self._keys.update()
+        self._values.update()
 
         return False
 
@@ -46,7 +46,7 @@ class KonanMapSyntheticProvider(KonanObjectSyntheticProvider):
         return self._keys.num_children()
 
     def has_children(self):
-        return self._keys.has_children()
+        return True
 
     def get_child_index(self, name):
         # TODO: Not correct, we need to look at the values which this doesn't do

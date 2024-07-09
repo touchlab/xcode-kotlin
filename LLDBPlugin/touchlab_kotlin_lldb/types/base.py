@@ -5,8 +5,8 @@ import lldb
 from ..util import strip_quotes, log, evaluate
 from ..cache import LLDBCache
 
-KOTLIN_OBJ_HEADER_TYPE = lldb.SBTypeNameSpecifier('ObjHeader *', lldb.eMatchTypeNormal)
-KOTLIN_ARRAY_HEADER_TYPE = lldb.SBTypeNameSpecifier('ArrayHeader *', lldb.eMatchTypeNormal)
+KOTLIN_OBJ_HEADER_TYPE = lldb.SBTypeNameSpecifier('ObjHeader', lldb.eMatchTypeNormal)
+KOTLIN_ARRAY_HEADER_TYPE = lldb.SBTypeNameSpecifier('ArrayHeader', lldb.eMatchTypeNormal)
 KOTLIN_CATEGORY = 'Kotlin'
 
 _TYPE_CONVERSION = [
@@ -55,6 +55,27 @@ _TYPE_CONVERSION = [
 ]
 
 
+def single_pointer(valobj: lldb.SBValue) -> lldb.SBValue:
+    non_synthetic_value = valobj.GetNonSyntheticValue()
+
+    # TODO: Test how this behaves when stopped in C++
+    # In case we've stopped in Swift, this will be true.
+    if non_synthetic_value.type.IsReferenceType():
+        return non_synthetic_value
+
+    while non_synthetic_value.type.GetPointeeType().IsPointerType():
+        non_synthetic_value = non_synthetic_value.Dereference()
+
+    if not non_synthetic_value.type.IsPointerType():
+        non_synthetic_value = non_synthetic_value.AddressOf()
+
+    return non_synthetic_value
+
+
+def obj_header_pointer(valobj: lldb.SBValue) -> lldb.SBValue:
+    return single_pointer(valobj).Cast(obj_header_type())
+
+
 def get_runtime_type(variable):
     return strip_quotes(evaluate("(char *)Konan_DebugGetTypeName({:#x})", variable.unsigned).summary)
 
@@ -62,21 +83,21 @@ def get_runtime_type(variable):
 def type_info_type() -> lldb.SBType:
     self = LLDBCache.instance()
     if self._type_info_type is None:
-        self._type_info_type = evaluate('(TypeInfo*)0x0').type
+        self._type_info_type = evaluate('(TypeInfo*)0x0').GetNonSyntheticValue().type
     return self._type_info_type
 
 
 def obj_header_type() -> lldb.SBType:
     self = LLDBCache.instance()
     if self._obj_header_type is None:
-        self._obj_header_type = evaluate('(ObjHeader*)0x0').type
+        self._obj_header_type = evaluate('(ObjHeader*)0x0').GetNonSyntheticValue().type
     return self._obj_header_type
 
 
 def array_header_type() -> lldb.SBType:
     self = LLDBCache.instance()
     if self._array_header_type is None:
-        self._array_header_type = evaluate('(ArrayHeader*)0x0').type
+        self._array_header_type = evaluate('(ArrayHeader*)0x0').GetNonSyntheticValue().type
     return self._array_header_type
 
 
@@ -96,8 +117,7 @@ def runtime_type_alignment() -> lldb.value:
     return self._runtime_type_alignment
 
 
-def _symbol_loaded_address(name: str, debugger: lldb.SBDebugger) -> int:
-    target: lldb.SBTarget = debugger.GetSelectedTarget()
+def _symbol_loaded_address(name: str, target: lldb.SBTarget) -> int:
     candidates = target.FindSymbols(name)
     # take first
     for candidate in candidates:
@@ -108,25 +128,37 @@ def _symbol_loaded_address(name: str, debugger: lldb.SBDebugger) -> int:
     return 0
 
 
-def get_string_symbol_address() -> int:
+def _get_konan_class_symbol_value(cls_name: str) -> lldb.value:
+    target = lldb.debugger.GetSelectedTarget()
+    address = _symbol_loaded_address(f'kclass:{cls_name}', target)
+    return lldb.value(
+        target.CreateValueFromAddress(
+            cls_name,
+            lldb.SBAddress(address, target),
+            type_info_type(),
+        )
+    )
+
+
+def get_string_symbol() -> lldb.value:
     self = LLDBCache.instance()
-    if self._string_symbol_addr is None:
-        self._string_symbol_addr = _symbol_loaded_address('kclass:kotlin.String', lldb.debugger)
-    return self._string_symbol_addr
+    if self._string_symbol_value is None:
+        self._string_symbol_value = _get_konan_class_symbol_value('kotlin.String')
+    return self._string_symbol_value
 
 
-def get_list_symbol_address() -> int:
+def get_list_symbol() -> lldb.value:
     self = LLDBCache.instance()
-    if self._list_symbol_addr is None:
-        self._list_symbol_addr = _symbol_loaded_address('kclass:kotlin.collections.List', lldb.debugger)
-    return self._list_symbol_addr
+    if self._list_symbol_value is None:
+        self._list_symbol_value = _get_konan_class_symbol_value('kotlin.collections.List')
+    return self._list_symbol_value
 
 
-def get_map_symbol_address() -> int:
+def get_map_symbol() -> lldb.value:
     self = LLDBCache.instance()
-    if self._map_symbol_addr is None:
-        self._map_symbol_addr = _symbol_loaded_address('kclass:kotlin.collections.Map', lldb.debugger)
-    return self._map_symbol_addr
+    if self._map_symbol_value is None:
+        self._map_symbol_value = _get_konan_class_symbol_value('kotlin.collections.Map')
+    return self._map_symbol_value
 
 
 class KnownValueType:

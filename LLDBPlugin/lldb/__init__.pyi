@@ -10801,11 +10801,11 @@ class SBType:
         ...
     
     __bool__ = ...
-    def IsValid(self):
+    def IsValid(self) -> bool:
         r"""IsValid(SBType self) -> bool"""
         ...
     
-    def GetByteSize(self):
+    def GetByteSize(self) -> int:
         r"""
         GetByteSize(SBType self) -> uint64_t
         Returns the number of bytes a variable with the given types occupies in memory.
@@ -10828,7 +10828,7 @@ class SBType:
         """
         ...
     
-    def IsPointerType(self):
+    def IsPointerType(self) -> bool:
         r"""
         IsPointerType(SBType self) -> bool
         Returns true if this type is a pointer type.
@@ -10844,7 +10844,7 @@ class SBType:
         """
         ...
     
-    def IsReferenceType(self):
+    def IsReferenceType(self) -> bool:
         r"""
         IsReferenceType(SBType self) -> bool
         Returns true if this type is a reference type.
@@ -10858,11 +10858,11 @@ class SBType:
         """
         ...
     
-    def IsFunctionType(self):
+    def IsFunctionType(self) -> bool:
         r"""IsFunctionType(SBType self) -> bool"""
         ...
     
-    def IsPolymorphicClass(self):
+    def IsPolymorphicClass(self) -> bool:
         r"""
         IsPolymorphicClass(SBType self) -> bool
         Returns true if this type is a polymorphic type.
@@ -10878,7 +10878,7 @@ class SBType:
         """
         ...
     
-    def IsArrayType(self):
+    def IsArrayType(self) -> bool:
         r"""
         IsArrayType(SBType self) -> bool
         Returns true if this type is an array type.
@@ -10895,7 +10895,7 @@ class SBType:
         """
         ...
     
-    def IsVectorType(self):
+    def IsVectorType(self) -> bool:
         r"""
         IsVectorType(SBType self) -> bool
         Returns true if this type is a vector type.
@@ -10910,7 +10910,7 @@ class SBType:
         """
         ...
     
-    def IsTypedefType(self):
+    def IsTypedefType(self) -> bool:
         r"""
         IsTypedefType(SBType self) -> bool
         Returns true if this type is a typedef.
@@ -10924,7 +10924,7 @@ class SBType:
         """
         ...
     
-    def IsAnonymousType(self):
+    def IsAnonymousType(self) -> bool:
         r"""
         IsAnonymousType(SBType self) -> bool
         Returns true if this type is an anonymous type.
@@ -10939,7 +10939,7 @@ class SBType:
         """
         ...
     
-    def IsScopedEnumerationType(self):
+    def IsScopedEnumerationType(self) -> bool:
         r"""
         IsScopedEnumerationType(SBType self) -> bool
         Returns true if this type is a scoped enum.
@@ -10953,7 +10953,7 @@ class SBType:
         """
         ...
     
-    def IsAggregateType(self):
+    def IsAggregateType(self) -> bool:
         r"""
         IsAggregateType(SBType self) -> bool
         Returns true if this type is an aggregate type.
@@ -10967,7 +10967,7 @@ class SBType:
         """
         ...
     
-    def GetPointerType(self):
+    def GetPointerType(self) -> SBType:
         r"""
         GetPointerType(SBType self) -> SBType
         Returns a type that represents a pointer to this type.
@@ -10984,7 +10984,7 @@ class SBType:
         """
         ...
     
-    def GetPointeeType(self):
+    def GetPointeeType(self) -> SBType:
         r"""
         GetPointeeType(SBType self) -> SBType
         Returns the underlying pointee type.
@@ -11008,7 +11008,7 @@ class SBType:
         """
         ...
     
-    def GetReferenceType(self):
+    def GetReferenceType(self) -> SBType:
         r"""
         GetReferenceType(SBType self) -> SBType
         Returns a type that represents a reference to this type.
@@ -11027,7 +11027,7 @@ class SBType:
         """
         ...
     
-    def GetTypedefedType(self):
+    def GetTypedefedType(self) -> SBType:
         r"""
         GetTypedefedType(SBType self) -> SBType
         Returns the underlying type of a typedef.
@@ -11045,7 +11045,7 @@ class SBType:
         """
         ...
     
-    def GetDereferencedType(self):
+    def GetDereferencedType(self) -> SBType:
         r"""
         GetDereferencedType(SBType self) -> SBType
         Returns the underlying type of a reference type.
@@ -11064,7 +11064,7 @@ class SBType:
         """
         ...
     
-    def GetUnqualifiedType(self):
+    def GetUnqualifiedType(self) -> SBType:
         r"""
         GetUnqualifiedType(SBType self) -> SBType
         Returns the unqualified version of this type.
@@ -11078,7 +11078,7 @@ class SBType:
         """
         ...
     
-    def GetArrayElementType(self):
+    def GetArrayElementType(self) -> SBType:
         r"""
         GetArrayElementType(SBType self) -> SBType
         Returns the array element type if this type is an array type.
@@ -11098,7 +11098,7 @@ class SBType:
         """
         ...
     
-    def GetArrayType(self, size):
+    def GetArrayType(self, size) -> SBType:
         r"""
         GetArrayType(SBType self, uint64_t size) -> SBType
         Returns the array type with the given constant size.
@@ -11114,7 +11114,7 @@ class SBType:
         """
         ...
     
-    def GetVectorElementType(self):
+    def GetVectorElementType(self) -> SBType:
         r"""
         GetVectorElementType(SBType self) -> SBType
         Returns the vector element type if this type is a vector type.
@@ -11134,11 +11134,11 @@ class SBType:
         """
         ...
     
-    def GetCanonicalType(self):
+    def GetCanonicalType(self) -> SBType:
         r"""GetCanonicalType(SBType self) -> SBType"""
         ...
     
-    def GetEnumerationIntegerType(self):
+    def GetEnumerationIntegerType(self) -> SBType:
         r"""
         GetEnumerationIntegerType(SBType self) -> SBType
         Returns the underlying integer type if this is an enumeration type.
@@ -11184,7 +11184,7 @@ class SBType:
         """
         ...
     
-    def GetNumberOfFields(self):
+    def GetNumberOfFields(self) -> int:
         r"""
         GetNumberOfFields(SBType self) -> uint32_t
         Returns the number of fields of this type.
@@ -11208,7 +11208,7 @@ class SBType:
         """
         ...
     
-    def GetNumberOfDirectBaseClasses(self):
+    def GetNumberOfDirectBaseClasses(self) -> int:
         r"""
         GetNumberOfDirectBaseClasses(SBType self) -> uint32_t
         Returns the number of base/parent classes of this type.
@@ -11227,7 +11227,7 @@ class SBType:
         """
         ...
     
-    def GetNumberOfVirtualBaseClasses(self):
+    def GetNumberOfVirtualBaseClasses(self) -> int:
         r"""
         GetNumberOfVirtualBaseClasses(SBType self) -> uint32_t
         Returns the number of virtual base/parent classes of this type
@@ -11244,7 +11244,7 @@ class SBType:
         """
         ...
     
-    def GetFieldAtIndex(self, idx):
+    def GetFieldAtIndex(self, idx: int) -> SBTypeMember:
         r"""
         GetFieldAtIndex(SBType self, uint32_t idx) -> SBTypeMember
         Returns the field at the given index.
@@ -11266,7 +11266,7 @@ class SBType:
         """
         ...
     
-    def GetDirectBaseClassAtIndex(self, idx):
+    def GetDirectBaseClassAtIndex(self, idx: int) -> SBTypeMember:
         r"""
         GetDirectBaseClassAtIndex(SBType self, uint32_t idx) -> SBTypeMember
         Returns the direct base class as indexed by `GetNumberOfDirectBaseClasses`.
@@ -11277,7 +11277,7 @@ class SBType:
         """
         ...
     
-    def GetVirtualBaseClassAtIndex(self, idx):
+    def GetVirtualBaseClassAtIndex(self, idx: int) -> SBTypeMember:
         r"""
         GetVirtualBaseClassAtIndex(SBType self, uint32_t idx) -> SBTypeMember
         Returns the virtual base class as indexed by
@@ -11289,11 +11289,11 @@ class SBType:
         """
         ...
     
-    def GetEnumMembers(self):
+    def GetEnumMembers(self) -> SBTypeEnumMemberList:
         r"""GetEnumMembers(SBType self) -> SBTypeEnumMemberList"""
         ...
     
-    def GetNumberOfTemplateArguments(self):
+    def GetNumberOfTemplateArguments(self) -> int:
         r"""
         GetNumberOfTemplateArguments(SBType self) -> uint32_t
         Returns the number of template arguments of this type.
@@ -11311,7 +11311,7 @@ class SBType:
         """
         ...
     
-    def GetTemplateArgumentType(self, idx):
+    def GetTemplateArgumentType(self, idx: int) -> SBType:
         r"""
         GetTemplateArgumentType(SBType self, uint32_t idx) -> SBType
         Returns the type of the template argument with the given index.
@@ -11331,7 +11331,7 @@ class SBType:
         """
         ...
     
-    def GetTemplateArgumentKind(self, idx):
+    def GetTemplateArgumentKind(self, idx: int):
         r"""
         GetTemplateArgumentKind(SBType self, uint32_t idx) -> lldb::TemplateArgumentKind
         Returns the kind of the template argument with the given index.
@@ -11352,7 +11352,7 @@ class SBType:
         """
         ...
     
-    def GetFunctionReturnType(self):
+    def GetFunctionReturnType(self) -> SBType:
         r"""
         GetFunctionReturnType(SBType self) -> SBType
         Returns the return type if this type represents a function.
@@ -11373,7 +11373,7 @@ class SBType:
         """
         ...
     
-    def GetFunctionArgumentTypes(self):
+    def GetFunctionArgumentTypes(self) -> SBTypeList:
         r"""
         GetFunctionArgumentTypes(SBType self) -> SBTypeList
         Returns the list of argument types if this type represents a function.
@@ -11392,7 +11392,7 @@ class SBType:
         """
         ...
     
-    def GetNumberOfMemberFunctions(self):
+    def GetNumberOfMemberFunctions(self) -> int:
         r"""
         GetNumberOfMemberFunctions(SBType self) -> uint32_t
         Returns the number of member functions of this type.
@@ -11413,7 +11413,7 @@ class SBType:
         """
         ...
     
-    def GetMemberFunctionAtIndex(self, idx):
+    def GetMemberFunctionAtIndex(self, idx: int) -> SBTypeMemberFunction:
         r"""
         GetMemberFunctionAtIndex(SBType self, uint32_t idx) -> SBTypeMemberFunction
         Returns the member function of this type with the given index.
@@ -11434,7 +11434,7 @@ class SBType:
         """
         ...
     
-    def GetModule(self):
+    def GetModule(self) -> SBModule:
         r"""
         GetModule(SBType self) -> SBModule
         Returns the `SBModule` this `SBType` belongs to.
@@ -11447,7 +11447,7 @@ class SBType:
         """
         ...
     
-    def GetName(self):
+    def GetName(self) -> str:
         r"""
         GetName() -> string
         Returns the name of this type.
@@ -11471,7 +11471,7 @@ class SBType:
         """
         ...
     
-    def GetDisplayTypeName(self):
+    def GetDisplayTypeName(self) -> str:
         r"""
         GetDisplayTypeName() -> string
         Returns the name of this type in a user-friendly format.
@@ -11504,7 +11504,7 @@ class SBType:
         """
         ...
     
-    def IsTypeComplete(self):
+    def IsTypeComplete(self) -> bool:
         r"""
         IsTypeComplete(SBType self) -> bool
         Returns true if the type is completely defined.
@@ -11524,7 +11524,7 @@ class SBType:
         """
         ...
     
-    def GetTypeFlags(self):
+    def GetTypeFlags(self) -> int:
         r"""
         GetTypeFlags(SBType self) -> uint32_t
         Returns the `TypeFlags` values for this type.
@@ -11544,38 +11544,38 @@ class SBType:
         """
         ...
     
-    def GetDescription(self, description, description_level):
+    def GetDescription(self, description: SBStream, description_level) -> bool:
         r"""GetDescription(SBType self, SBStream description, lldb::DescriptionLevel description_level) -> bool"""
         ...
     
-    def __eq__(self, rhs) -> bool:
+    def __eq__(self, rhs: SBType) -> bool:
         r"""__eq__(SBType self, SBType rhs) -> bool"""
         ...
     
-    def __ne__(self, rhs) -> bool:
+    def __ne__(self, rhs: SBType) -> bool:
         r"""__ne__(SBType self, SBType rhs) -> bool"""
         ...
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""__repr__(SBType self) -> std::string"""
         ...
     
     def template_arg_array(self): # -> list[Any] | None:
         ...
     
-    module = ...
-    name = ...
-    size = ...
-    is_pointer = ...
-    is_reference = ...
-    is_reference = ...
-    num_fields = ...
-    num_bases = ...
-    num_vbases = ...
-    num_template_args = ...
+    module: SBModule = ...
+    name: str = ...
+    size: int = ...
+    is_pointer: bool = ...
+    is_reference: bool = ...
+    is_reference: bool = ...
+    num_fields: int = ...
+    num_bases: int = ...
+    num_vbases: int = ...
+    num_template_args: int = ...
     template_args = ...
     type = ...
-    is_complete = ...
+    is_complete: bool = ...
     def get_bases_array(self): # -> list[Any]:
         '''An accessor function that returns a list() that contains all direct base classes in a lldb.SBType object.'''
         ...
@@ -12365,12 +12365,12 @@ class SBTypeSynthetic:
     r"""Represents a summary that can be associated to one or more types."""
     thisown = ...
     @staticmethod
-    def CreateWithClassName(data, options=...):
+    def CreateWithClassName(data: str, options: int=...) -> SBTypeSynthetic:
         r"""CreateWithClassName(char const * data, uint32_t options=0) -> SBTypeSynthetic"""
         ...
     
     @staticmethod
-    def CreateWithScriptCode(data, options=...):
+    def CreateWithScriptCode(data: str, options: int=...) -> SBTypeSynthetic:
         r"""CreateWithScriptCode(char const * data, uint32_t options=0) -> SBTypeSynthetic"""
         ...
     
@@ -12386,67 +12386,61 @@ class SBTypeSynthetic:
         ...
     
     __bool__ = ...
-    def IsValid(self):
+    def IsValid(self) -> bool:
         r"""IsValid(SBTypeSynthetic self) -> bool"""
         ...
     
-    def IsClassCode(self):
+    def IsClassCode(self) -> bool:
         r"""IsClassCode(SBTypeSynthetic self) -> bool"""
         ...
     
-    def IsClassName(self):
+    def IsClassName(self) -> bool:
         r"""IsClassName(SBTypeSynthetic self) -> bool"""
         ...
     
-    def GetData(self):
+    def GetData(self) -> str:
         r"""GetData(SBTypeSynthetic self) -> char const *"""
         ...
     
-    def SetClassName(self, data):
+    def SetClassName(self, data: str):
         r"""SetClassName(SBTypeSynthetic self, char const * data)"""
         ...
     
-    def SetClassCode(self, data):
+    def SetClassCode(self, data: str):
         r"""SetClassCode(SBTypeSynthetic self, char const * data)"""
         ...
     
-    def GetOptions(self):
+    def GetOptions(self) -> int:
         r"""GetOptions(SBTypeSynthetic self) -> uint32_t"""
         ...
     
-    def SetOptions(self, arg2):
+    def SetOptions(self, arg2: int):
         r"""SetOptions(SBTypeSynthetic self, uint32_t arg2)"""
         ...
     
-    def GetDescription(self, description, description_level):
+    def GetDescription(self, description: SBStream, description_level) -> bool:
         r"""GetDescription(SBTypeSynthetic self, SBStream description, lldb::DescriptionLevel description_level) -> bool"""
         ...
     
-    def IsEqualTo(self, rhs):
+    def IsEqualTo(self, rhs: SBTypeSynthetic) -> bool:
         r"""IsEqualTo(SBTypeSynthetic self, SBTypeSynthetic rhs) -> bool"""
         ...
     
-    def __eq__(self, rhs) -> bool:
+    def __eq__(self, rhs: SBTypeSynthetic) -> bool:
         r"""__eq__(SBTypeSynthetic self, SBTypeSynthetic rhs) -> bool"""
         ...
     
-    def __ne__(self, rhs) -> bool:
+    def __ne__(self, rhs: SBTypeSynthetic) -> bool:
         r"""__ne__(SBTypeSynthetic self, SBTypeSynthetic rhs) -> bool"""
         ...
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""__repr__(SBTypeSynthetic self) -> std::string"""
         ...
     
-    options = ...
-    contains_code = ...
-    synthetic_data = ...
-    def __eq__(self, rhs) -> bool:
-        ...
-    
-    def __ne__(self, rhs) -> bool:
-        ...
-    
+    options: int = ...
+    contains_code: bool = ...
+    synthetic_data: str = ...
 
 
 class SBUnixSignals:
@@ -12642,7 +12636,7 @@ class SBValue:
         """
         ...
     
-    def GetValueAsAddress(self):
+    def GetValueAsAddress(self) -> int:
         r"""
         GetValueAsAddress(SBValue self) -> lldb::addr_t
              // Return the value as an address.  On failure,
@@ -12669,7 +12663,7 @@ class SBValue:
         r"""GetValueType(SBValue self) -> lldb::ValueType"""
         ...
     
-    def GetValueDidChange(self):
+    def GetValueDidChange(self) -> bool:
         r"""GetValueDidChange(SBValue self) -> bool"""
         ...
     
@@ -12680,19 +12674,19 @@ class SBValue:
         """
         ...
     
-    def GetObjectDescription(self):
+    def GetObjectDescription(self) -> str:
         r"""GetObjectDescription(SBValue self) -> char const *"""
         ...
     
-    def GetDynamicValue(self, use_dynamic):
+    def GetDynamicValue(self, use_dynamic) -> SBValue:
         r"""GetDynamicValue(SBValue self, lldb::DynamicValueType use_dynamic) -> SBValue"""
         ...
     
-    def GetStaticValue(self):
+    def GetStaticValue(self) -> SBValue:
         r"""GetStaticValue(SBValue self) -> SBValue"""
         ...
     
-    def GetNonSyntheticValue(self):
+    def GetNonSyntheticValue(self) -> SBValue:
         r"""GetNonSyntheticValue(SBValue self) -> SBValue"""
         ...
     
@@ -12704,27 +12698,27 @@ class SBValue:
         r"""SetPreferDynamicValue(SBValue self, lldb::DynamicValueType use_dynamic)"""
         ...
     
-    def GetPreferSyntheticValue(self):
+    def GetPreferSyntheticValue(self) -> bool:
         r"""GetPreferSyntheticValue(SBValue self) -> bool"""
         ...
     
-    def SetPreferSyntheticValue(self, use_synthetic):
+    def SetPreferSyntheticValue(self, use_synthetic: bool):
         r"""SetPreferSyntheticValue(SBValue self, bool use_synthetic)"""
         ...
     
-    def IsDynamic(self):
+    def IsDynamic(self) -> bool:
         r"""IsDynamic(SBValue self) -> bool"""
         ...
     
-    def IsSynthetic(self):
+    def IsSynthetic(self) -> bool:
         r"""IsSynthetic(SBValue self) -> bool"""
         ...
     
-    def IsSyntheticChildrenGenerated(self):
+    def IsSyntheticChildrenGenerated(self) -> bool:
         r"""IsSyntheticChildrenGenerated(SBValue self) -> bool"""
         ...
     
-    def SetSyntheticChildrenGenerated(self, arg2):
+    def SetSyntheticChildrenGenerated(self, arg2: bool):
         r"""SetSyntheticChildrenGenerated(SBValue self, bool arg2)"""
         ...
     
@@ -12732,34 +12726,34 @@ class SBValue:
         r"""GetLocation(SBValue self) -> char const *"""
         ...
     
-    def SetValueFromCString(self, *args):
+    def SetValueFromCString(self, *args) -> bool:
         r"""
         SetValueFromCString(SBValue self, char const * value_str) -> bool
         SetValueFromCString(SBValue self, char const * value_str, SBError error) -> bool
         """
         ...
     
-    def GetTypeFormat(self):
+    def GetTypeFormat(self) -> SBTypeFormat:
         r"""GetTypeFormat(SBValue self) -> SBTypeFormat"""
         ...
     
-    def GetTypeSummary(self):
+    def GetTypeSummary(self) -> SBTypeSummary:
         r"""GetTypeSummary(SBValue self) -> SBTypeSummary"""
         ...
     
-    def GetTypeFilter(self):
+    def GetTypeFilter(self) -> SBTypeFilter:
         r"""GetTypeFilter(SBValue self) -> SBTypeFilter"""
         ...
     
-    def GetTypeSynthetic(self):
+    def GetTypeSynthetic(self) -> SBTypeSynthetic:
         r"""GetTypeSynthetic(SBValue self) -> SBTypeSynthetic"""
         ...
     
-    def CreateChildAtOffset(self, name, offset, type):
+    def CreateChildAtOffset(self, name: str, offset: int, type: SBType) -> SBValue:
         r"""CreateChildAtOffset(SBValue self, char const * name, uint32_t offset, SBType type) -> SBValue"""
         ...
     
-    def Cast(self, type) -> SBValue:
+    def Cast(self, type: SBType) -> SBValue:
         r"""Cast(SBValue self, SBType type) -> SBValue"""
         ...
     
@@ -12770,11 +12764,11 @@ class SBValue:
         """
         ...
     
-    def CreateValueFromAddress(self, name, address, type) -> SBValue:
+    def CreateValueFromAddress(self, name: str, address: int, type: SBType) -> SBValue:
         r"""CreateValueFromAddress(SBValue self, char const * name, lldb::addr_t address, SBType type) -> SBValue"""
         ...
     
-    def CreateValueFromData(self, name, data, type) -> SBValue:
+    def CreateValueFromData(self, name: str, data: SBData, type: SBType) -> SBValue:
         r"""CreateValueFromData(SBValue self, char const * name, SBData data, SBType type) -> SBValue"""
         ...
     

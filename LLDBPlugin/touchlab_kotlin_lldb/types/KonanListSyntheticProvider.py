@@ -33,15 +33,15 @@ class KonanListSyntheticProvider(KonanObjectSyntheticProvider):
                 )
 
             self._backing = backing
-        else:
-            self._backing.update()
+
+        self._backing.update()
         return False
 
     def num_children(self):
         return self._backing.num_children()
 
     def has_children(self):
-        return self._backing.has_children()
+        return True
 
     def get_child_index(self, name):
         return self._backing.get_child_index(name)

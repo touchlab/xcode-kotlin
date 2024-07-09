@@ -20,7 +20,7 @@ class KonanArraySyntheticProvider(KonanBaseSyntheticProvider):
         return self._children_count
 
     def has_children(self):
-        return self._children_count > 0
+        return True
 
     def get_child_index(self, name):
         log(lambda: "KonanArraySyntheticProvider::get_child_index({})".format(name))

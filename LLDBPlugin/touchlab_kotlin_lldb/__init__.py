@@ -19,7 +19,6 @@ KONAN_INIT_PREFIX = '_Konan_init_'
 KONAN_INIT_MODULE_NAME = '[0-9a-zA-Z_]+'
 KONAN_INIT_SUFFIX = '_kexe'
 
-
 def __lldb_init_module(debugger: lldb.SBDebugger, _):
     log(lambda: "init start")
 
@@ -28,7 +27,7 @@ def __lldb_init_module(debugger: lldb.SBDebugger, _):
     register_commands(debugger)
     register_hooks(debugger)
 
-    configure_objc_types(debugger)
+    configure_objc_types_init(debugger)
 
     log(lambda: "init end")
 
@@ -39,7 +38,7 @@ def reset_cache():
     LLDBCache.reset()
 
 
-def configure_objc_types(debugger: lldb.SBDebugger):
+def configure_objc_types_init(debugger: lldb.SBDebugger):
     target = debugger.GetDummyTarget()
     breakpoint = target.BreakpointCreateByRegex(
         "^{}({})({})?$".format(KONAN_INIT_PREFIX, KONAN_INIT_MODULE_NAME, KONAN_INIT_SUFFIX)
@@ -89,8 +88,7 @@ def configure_objc_types_breakpoint(frame: lldb.SBFrame, bp_loc: lldb.SBBreakpoi
             )
         )
 
-    debugger = target.debugger
-    category = debugger.GetCategory(KOTLIN_CATEGORY)
+    category = target.debugger.GetCategory(KOTLIN_CATEGORY)
 
     for type_specifier in specifiers_to_register:
         category.AddTypeSummary(

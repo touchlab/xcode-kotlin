@@ -1,17 +1,18 @@
 import lldb
 
-from .base import get_string_symbol_address, get_list_symbol_address, get_map_symbol_address
+from .base import get_string_symbol, get_list_symbol, get_map_symbol
 from .KonanStringSyntheticProvider import KonanStringSyntheticProvider
 from .KonanArraySyntheticProvider import KonanArraySyntheticProvider
 from .KonanListSyntheticProvider import KonanListSyntheticProvider
 from .KonanObjectSyntheticProvider import KonanObjectSyntheticProvider
 from .KonanBaseSyntheticProvider import KonanBaseSyntheticProvider
 from .KonanMapSyntheticProvider import KonanMapSyntheticProvider
-from ..util import log, DebuggerException
+from ..util import log
 
 
 def _is_subtype(obj_type_info: lldb.value, type_info: lldb.value) -> bool:
     try:
+        # noinspection PyPep8Naming
         TF_INTERFACE = 1 << 2
         # If it is an interface - check in list of implemented interfaces.
         if (int(type_info.flags_) & TF_INTERFACE) != 0:
@@ -25,7 +26,7 @@ def _is_subtype(obj_type_info: lldb.value, type_info: lldb.value) -> bool:
         return obj_type_info != 0
     except BaseException as e:
         import traceback
-        print(traceback.format_exc())
+        traceback.print_exc()
         return False
 
 
@@ -33,13 +34,11 @@ def select_provider(valobj: lldb.SBValue, type_info: lldb.value) -> KonanBaseSyn
     log(lambda: "[BEGIN] select_provider")
 
     try:
-        type_info_address = type_info.sbvalue.unsigned
-        # valobj.Cast()
-        if _is_subtype(type_info, lldb.value(valobj.CreateValueFromAddress("kotlin.String", get_string_symbol_address(), type_info.sbvalue.type))):
+        if _is_subtype(type_info, get_string_symbol()):
             provider = KonanStringSyntheticProvider(valobj, type_info)
-        elif _is_subtype(type_info, lldb.value(valobj.CreateValueFromAddress("kotlin.collections.List", get_list_symbol_address(), type_info.sbvalue.type))):
+        elif _is_subtype(type_info, get_list_symbol()):
             provider = KonanListSyntheticProvider(valobj, type_info)
-        elif _is_subtype(type_info, lldb.value(valobj.CreateValueFromAddress("kotlin.collections.Map", get_map_symbol_address(), type_info.sbvalue.type))):
+        elif _is_subtype(type_info, get_map_symbol()):
             provider = KonanMapSyntheticProvider(valobj, type_info)
         elif int(type_info.instanceSize_) < 0:
             provider = KonanArraySyntheticProvider(valobj, type_info)

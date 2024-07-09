@@ -2,8 +2,21 @@
 
 import os
 import subprocess
+import sys
 
 import lldb
+
+
+def tracefunc(frame, event, arg, indent=[0]):
+    if event == "call":
+        indent[0] += 2
+        print("-" * indent[0] + "> call function", frame.f_code.co_name)
+    elif event == "return":
+        print("<" + "-" * indent[0], "exit function", frame.f_code.co_name)
+        indent[0] -= 2
+    return tracefunc
+
+# sys.setprofile(tracefunc)
 
 gradle_invoke = subprocess.Popen(['./gradlew', 'compileSwift'], cwd='test_project')
 gradle_exit_code = gradle_invoke.wait()
@@ -28,6 +41,9 @@ debugger: lldb.SBDebugger = lldb.SBDebugger.Create()
 debugger.SetAsync(False)
 
 # debugger.HandleCommand('log enable lldb default')
+# debugger.HandleCommand('log enable lldb default')
+debugger.HandleCommand('log enable lldb commands')
+debugger.HandleCommand('log enable lldb types')
 
 # Import our module
 debugger.HandleCommand('command script import touchlab_kotlin_lldb')
@@ -42,12 +58,13 @@ if target:
 
     if process:
         import time
+
         start = time.perf_counter()
-        debugger.HandleCommand('fr v --ptr-depth 16 -- string')
+        debugger.HandleCommand('fr v -T --ptr-depth 16')
         print('HandleCommand took {:.6}s'.format(time.perf_counter() - start))
         process.Continue()
         # debugger.HandleCommand('fr v --ptr-depth 16 -- data')
-        debugger.HandleCommand('fr v --ptr-depth 16')
+        # debugger.HandleCommand('fr v --ptr-depth 16')
 
         process.Kill()
 
