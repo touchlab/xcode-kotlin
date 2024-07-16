@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "co.touchlab"
-version = "2.0.0-alpha.1"
+version = "2.0.0"
 
 kotlin {
     listOf(macosX64(), macosArm64()).forEach {
