@@ -6,7 +6,7 @@ import lldb
 from .stepping.KonanHook import KonanHook
 from .types.base import KOTLIN_CATEGORY, KOTLIN_OBJ_HEADER_TYPE, KOTLIN_ARRAY_HEADER_TYPE
 from .util.log import log
-from .commands import FieldTypeCommand, SymbolByNameCommand, TypeByAddressCommand
+from .commands import FieldTypeCommand, SymbolByNameCommand, TypeByAddressCommand, GCCollectCommand
 
 from .types.summary import kotlin_object_type_summary, kotlin_objc_class_summary
 from .types.proxy import KonanProxyTypeProvider, KonanObjcProxyTypeProvider
@@ -141,6 +141,7 @@ def register_commands(debugger: lldb.SBDebugger):
         FieldTypeCommand,
         SymbolByNameCommand,
         TypeByAddressCommand,
+        GCCollectCommand,
     ]
 
     for command in commands_to_register:

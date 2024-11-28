@@ -5292,7 +5292,7 @@ class SBInstruction:
         r"""GetMnemonic(SBInstruction self, SBTarget target) -> char const *"""
         ...
     
-    def GetOperands(self, target):
+    def GetOperands(self, target) -> string:
         r"""GetOperands(SBInstruction self, SBTarget target) -> char const *"""
         ...
     
@@ -5445,7 +5445,7 @@ class SBInstructionList:
         r"""__repr__(SBInstructionList self) -> std::string"""
         ...
     
-    def __iter__(self): # -> Generator[Any, Any, None]:
+    def __iter__(self) -> Iterator[SBInstruction]: # -> Generator[Any, Any, None]:
         '''Iterate over all instructions in a lldb.SBInstructionList
         object.'''
         ...
@@ -5454,7 +5454,7 @@ class SBInstructionList:
         '''Access len of the instruction list.'''
         ...
     
-    def __getitem__(self, key): # -> None:
+    def __getitem__(self, key) -> SBInstruction:
         '''Access instructions by integer index for array access or by lldb.SBAddress to find an instruction that matches a section offset address object.'''
         ...
     
