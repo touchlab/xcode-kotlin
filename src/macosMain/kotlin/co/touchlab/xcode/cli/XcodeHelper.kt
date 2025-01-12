@@ -44,8 +44,14 @@ object XcodeHelper {
     }
 
     fun openInBackground(installation: XcodeInstallation) {
-        Shell.exec("/usr/bin/open", "-gjFa", installation.path.value).checkSuccessful {
-            "Couldn't open ${installation.name} at ${installation.path}!"
+        // Fix using lower Xcode version than minimum required by macOS:
+        // _LSOpenURLsWithCompletionHandler() failed for the application /Applications/Xcode.app with error -10664.
+        // Usage: ./build/bin/macosArm64/debugExecutable/xcode-kotlin.kexe sync /Applications/Xcode.app
+        val realXcodePath = "${installation.path.value}/Contents/MacOS/Xcode"
+        logger.i { "Opening realXcodePath in background." }
+        Console.echo("Opening realXcodePath in background.")
+        Shell.exec("/usr/bin/open", "-gjF", realXcodePath).checkSuccessful {
+            "Couldn't open ${installation.name} at $realXcodePath!"
         }
     }
 
