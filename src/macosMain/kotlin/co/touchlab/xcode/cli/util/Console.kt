@@ -1,45 +1,50 @@
+@file:Suppress("invisible_reference", "invisible_member")
+
 package co.touchlab.xcode.cli.util
 
-import co.touchlab.kermit.Logger
-import kotlinx.cinterop.ExperimentalForeignApi
-import platform.posix.fflush
-import platform.posix.fprintf
-import platform.posix.stderr
+import com.github.ajalt.mordant.internal.STANDARD_TERM_INTERFACE
+import com.github.ajalt.mordant.terminal.Terminal
+import com.github.ajalt.mordant.terminal.YesNoPrompt
+import com.github.ajalt.mordant.terminal.danger
+import com.github.ajalt.mordant.terminal.info
+import com.github.ajalt.mordant.terminal.muted
+import com.github.ajalt.mordant.terminal.success
+import com.github.ajalt.mordant.terminal.warning
 
 object Console {
-    private val logger = Logger.withTag("Console")
+    val terminalRecorder = DelegatingTerminalRecorder(delegate = STANDARD_TERM_INTERFACE)
+    val terminal = Terminal(terminalInterface = terminalRecorder)
 
     fun echo(text: String = "") {
-        logger.v { text }
-        println(text)
+        terminal.println(text)
     }
 
     fun confirm(text: String): Boolean {
         while (true) {
-            val input = prompt(text, newLine = false)?.trim()?.lowercase() ?: return false
-            return when (input) {
-                "y", "yes" -> true
-                "n", "no" -> false
-                else -> {
-                    printError("Invalid input '$input', try again.")
-                    continue
-                }
+            val result = YesNoPrompt(text, terminal).ask()
+            if (result != null) {
+                return result
             }
         }
     }
 
-    fun prompt(text: String, newLine: Boolean = false): String? {
-        if (newLine) {
-            println(text)
-        } else {
-            print(text)
-        }
-        return readLine()
+    fun muted(message: String) {
+        terminal.muted(message)
     }
 
-    @OptIn(ExperimentalForeignApi::class)
-    fun printError(message: String) {
-        fprintf(stderr, message)
-        fflush(stderr)
+    fun info(message: String) {
+        terminal.info(message)
+    }
+
+    fun warning(message: String) {
+        terminal.warning(message)
+    }
+
+    fun danger(message: String) {
+        terminal.danger(message, stderr = true)
+    }
+
+    fun success(message: String) {
+        terminal.success(message)
     }
 }

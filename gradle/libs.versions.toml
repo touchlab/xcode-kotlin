@@ -1,16 +1,18 @@
 [versions]
-kotlin = "2.0.0"
+kotlin = "2.1.10"
 kotlinx-coroutines = "1.7.3"
-kotlinx-cli = "0.3.6"
 kotlinx-serialization = "1.6.0"
 kermit = "1.2.2"
 gradle-doctor = "0.9.2"
+clikt = "5.0.3"
+mordant = "3.0.1"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
-kotlinx-cli = { module = "org.jetbrains.kotlinx:kotlinx-cli", version.ref = "kotlinx-cli" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
+mordant = { module = "com.github.ajalt.mordant:mordant", version.ref = "mordant" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

@@ -7,7 +7,7 @@ import co.touchlab.xcode.cli.util.Console
 
 class Info: BaseXcodeListSubcommand("info", "Shows information about the plugin") {
 
-    override fun execute() = with(Console) {
+    override suspend fun run() = with(Console) {
         val installedVersion = PluginManager.installedVersion
         val bundledVersion = PluginManager.bundledVersion
 

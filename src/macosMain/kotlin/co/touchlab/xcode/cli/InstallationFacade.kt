@@ -1,30 +1,26 @@
 package co.touchlab.xcode.cli
 
-import co.touchlab.kermit.Logger
-import co.touchlab.xcode.cli.command.Install
 import co.touchlab.xcode.cli.util.Console
 
 object InstallationFacade {
-    private val logger = Logger.withTag("InstallationFacade")
-
-    fun installAll(xcodeInstallations: List<XcodeHelper.XcodeInstallation>, fixXcode15: Boolean) {
+    suspend fun installAll(xcodeInstallations: List<XcodeHelper.XcodeInstallation>, fixXcode15: Boolean) {
         XcodeHelper.ensureXcodeNotRunning()
 
         val bundledVersion = PluginManager.bundledVersion
-        logger.v { "Bundled plugin version = $bundledVersion" }
+        Console.muted("Bundled plugin version = $bundledVersion")
         val installedVersion = PluginManager.installedVersion
-        logger.v { "Installed plugin version = ${installedVersion ?: "N/A"}" }
+        Console.muted("Installed plugin version = ${installedVersion ?: "N/A"}")
 
         if (installedVersion != null) {
             val (confirmation, notification) = when {
                 bundledVersion > installedVersion -> {
-                    "Do you want to update from $installedVersion to $bundledVersion? y/n: " to "Updating to $bundledVersion"
+                    "Do you want to update from $installedVersion to $bundledVersion?" to "Updating to $bundledVersion"
                 }
                 bundledVersion == installedVersion -> {
-                    "Do you want to reinstall version $installedVersion? y/n: " to "Reinstalling $installedVersion"
+                    "Do you want to reinstall version $installedVersion?" to "Reinstalling $installedVersion"
                 }
                 bundledVersion < installedVersion -> {
-                    "Do you want to downgrade from $installedVersion to $bundledVersion? y/n: " to "Downgrading to $bundledVersion"
+                    "Do you want to downgrade from $installedVersion to $bundledVersion?" to "Downgrading to $bundledVersion"
                 }
                 else -> error("Unhandled comparison possibility!")
             }
@@ -33,11 +29,11 @@ object InstallationFacade {
                 return
             }
 
-            logger.v { "Installation confirmed." }
-            logger.i { notification }
+            Console.muted("Installation confirmed.")
+            Console.info(notification)
             uninstallAll()
         } else {
-            logger.i { "Installing $bundledVersion." }
+            Console.info("Installing $bundledVersion.")
         }
 
         PluginManager.install()
@@ -50,36 +46,36 @@ object InstallationFacade {
         LLDBInitManager.install()
         PluginManager.enable(bundledVersion, xcodeInstallations)
 
-        logger.i { "Installation complete." }
+        Console.info("Installation complete.")
     }
 
-    fun enable(xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
+    suspend fun enable(xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
         XcodeHelper.ensureXcodeNotRunning()
 
         val installedVersion = PluginManager.installedVersion ?: run {
-            Console.echo("Plugin not installed, nothing to enable.")
+            Console.warning("Plugin not installed, nothing to enable.")
             return
         }
 
         PluginManager.enable(installedVersion, xcodeInstallations)
 
-        logger.i { "Plugin enabled." }
+        Console.info("Plugin enabled.")
     }
 
-    fun disable(xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
+    suspend fun disable(xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
         XcodeHelper.ensureXcodeNotRunning()
 
         val installedVersion = PluginManager.installedVersion ?: run {
-            Console.echo("Plugin not installed, nothing to disable.")
+            Console.warning("Plugin not installed, nothing to disable.")
             return
         }
 
         PluginManager.disable(installedVersion, xcodeInstallations)
 
-        logger.i { "Plugin disabled." }
+        Console.info("Plugin disabled.")
     }
 
-    fun fixXcode15(xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
+    suspend fun fixXcode15(xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
         XcodeHelper.ensureXcodeNotRunning()
 
         val installedVersion = PluginManager.installedVersion
@@ -95,14 +91,14 @@ object InstallationFacade {
             }
         }
 
-        logger.i { "Xcode 15 fix applied." }
+        Console.info("Xcode 15 fix applied.")
     }
 
-    fun sync(xcodeInstallations: List<XcodeHelper.XcodeInstallation>, fixXcode15: Boolean) {
+    suspend fun sync(xcodeInstallations: List<XcodeHelper.XcodeInstallation>, fixXcode15: Boolean) {
         XcodeHelper.ensureXcodeNotRunning()
 
         val installedVersion = PluginManager.installedVersion ?: run {
-            Console.echo("Plugin not installed, nothing to synchronize.")
+            Console.warning("Plugin not installed, nothing to synchronize.")
             return
         }
 
@@ -113,16 +109,16 @@ object InstallationFacade {
         }
         PluginManager.enable(installedVersion, xcodeInstallations)
 
-        logger.i { "Synchronization complete." }
+        Console.info("Synchronization complete.")
     }
 
-    fun uninstallAll() {
-        logger.v { "Will uninstall all plugin components." }
+    suspend fun uninstallAll() {
+        Console.muted("Will uninstall all plugin components.")
         XcodeHelper.ensureXcodeNotRunning()
         PluginManager.uninstall()
         LangSpecManager.uninstall()
         LLDBInitManager.uninstall()
 
-        logger.i { "Uninstallation complete." }
+        Console.info("Uninstallation complete.")
     }
 }

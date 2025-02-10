@@ -1,8 +1,19 @@
 package co.touchlab.xcode.cli
 
-import co.touchlab.kermit.Logger
 import co.touchlab.xcode.cli.util.*
-import platform.posix.sleep
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import platform.posix.nice
+import kotlin.coroutines.coroutineContext
+import kotlin.time.Duration.Companion.seconds
 
 object PluginManager {
     val pluginName = "Kotlin.ideplugin"
@@ -14,7 +25,6 @@ object PluginManager {
     private val pluginTargetInfoFile = File(pluginTargetFile.path / "Contents" / "Info.plist")
     private val pluginVersionInfoKey = "CFBundleShortVersionString"
     private val pluginCompatibilityInfoKey = "DVTPlugInCompatibilityUUIDs"
-    private val logger = Logger.withTag("PluginManager")
     private val fixXcode15Timeout = 10
 
     val bundledVersion: SemVer
@@ -48,23 +58,23 @@ object PluginManager {
         }
 
     fun install() {
-        logger.v { "Ensuring plugins directory exists at ${pluginsDirectory.path}" }
+        Console.muted("Ensuring plugins directory exists at ${pluginsDirectory.path}")
         pluginsDirectory.mkdirs()
-        logger.v { "Copying Xcode plugin to target path ${pluginTargetFile.path}" }
+        Console.muted("Copying Xcode plugin to target path ${pluginTargetFile.path}")
         pluginSourceFile.copy(pluginTargetFile.path)
     }
 
-    fun enable(version: SemVer, xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
-        logger.i { "Removing Kotlin Plugin defaults so we can add it to allowed." }
+    suspend fun enable(version: SemVer, xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
+        Console.info("Removing Kotlin Plugin defaults so we can add it to allowed.")
         XcodeHelper.removeKotlinPluginFromDefaults()
-        logger.i { "Allowing Kotlin Plugin" }
+        Console.info("Allowing Kotlin Plugin")
         XcodeHelper.allowKotlinPlugin(version, xcodeInstallations)
     }
-
-    fun disable(version: SemVer, xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
-        logger.i { "Removing Kotlin Plugin defaults so we can add it to skipped." }
+    suspend fun disable(version: SemVer, xcodeInstallations: List<XcodeHelper.XcodeInstallation>) {
+        nice(420)
+        Console.info("Removing Kotlin Plugin defaults so we can add it to skipped.")
         XcodeHelper.removeKotlinPluginFromDefaults()
-        logger.i { "We need Xcode to skip the plugin, so it doesn't crash." }
+        Console.info("We need Xcode to skip the plugin, so it doesn't crash.")
         XcodeHelper.skipKotlinPlugin(version, xcodeInstallations)
     }
 
@@ -74,55 +84,57 @@ object PluginManager {
         Console.echo("Synchronizing plugin compatibility list.")
         val additionalPluginCompatibilityIds =
             xcodeInstallations.mapNotNull { it.pluginCompatabilityId?.let { PropertyList.Object.String(it) } }
-        logger.v { "Xcode installation IDs to include: ${additionalPluginCompatibilityIds.joinToString { it.value }}" }
+        Console.muted("Xcode installation IDs to include: ${additionalPluginCompatibilityIds.joinToString { it.value }}")
         val infoPlist = PropertyList.create(pluginTargetInfoFile)
         val rootDictionary = infoPlist.root.dictionary
         val oldPluginCompatibilityIds = rootDictionary
             .getOrPut(pluginCompatibilityInfoKey) { PropertyList.Object.Array(mutableListOf()) }
             .array
-        logger.v {
+        Console.muted(
             "Previous Xcode installation IDs: ${
                 oldPluginCompatibilityIds.mapNotNull { it.stringOrNull?.value }.joinToString()
             }"
-        }
+        )
         oldPluginCompatibilityIds.addAll(additionalPluginCompatibilityIds)
         val distinctPluginCompatibilityIds =
             oldPluginCompatibilityIds.distinctBy { it.stringOrNull?.value }.toMutableList()
-        logger.v {
+        Console.muted(
             "Xcode installation IDs to save: ${
                 distinctPluginCompatibilityIds.mapNotNull { it.stringOrNull?.value }.joinToString()
             }"
-        }
+        )
         rootDictionary[pluginCompatibilityInfoKey] = PropertyList.Object.Array(distinctPluginCompatibilityIds)
         pluginTargetInfoFile.write(infoPlist.toData(PropertyList.Format.XML))
     }
 
-    fun uninstall() {
-        logger.i { "Deleting Xcode plugin from ${pluginTargetFile.path}" }
+    suspend fun uninstall() {
+        Console.info("Deleting Xcode plugin from ${pluginTargetFile.path}")
         pluginTargetFile.delete()
         XcodeHelper.removeKotlinPluginFromDefaults()
     }
 
-    fun fixXcode15(xcodeInstallations: List<XcodeHelper.XcodeInstallation>): Unit = try {
+    suspend fun fixXcode15(xcodeInstallations: List<XcodeHelper.XcodeInstallation>): Unit = try {
         val cacheDir = Path(Shell.exec("/usr/bin/getconf", "DARWIN_USER_CACHE_DIR").output.orEmpty().trim())
-        logger.i { "Enabling IDEPerformanceDebugger built-in plugin." }
+        Console.info("Enabling IDEPerformanceDebugger built-in plugin.")
         XcodeHelper.setIDEPerformanceDebuggerEnabled(true)
 
         xcodeInstallations
             .filter { it.version.startsWith("15.") }
             .forEach { installation ->
-                logger.i { "Opening ${installation.name} in background to generate plugin cache" }
-                XcodeHelper.openInBackground(installation)
+                Console.info("Opening ${installation.name} in background to generate plugin cache")
+                val xcodeRunning = CoroutineScope(coroutineContext + Dispatchers.IO).launch {
+                    XcodeHelper.openInBackground(installation)
+                }
 
                 try {
                     for (i in 1..fixXcode15Timeout) {
-                        sleep(1u)
+                        delay(1.seconds)
 
                         val pluginCachePath =
                             cacheDir / "com.apple.DeveloperTools" / "${installation.version}-${installation.build}" / "Xcode" / "PlugInCache-Debug.xcplugincache"
 
                         if (pluginCachePath.exists()) {
-                            logger.i { "${installation.name} plugin cache file exists, checking if it contains IDEPerformanceDebugger entry yet" }
+                            Console.info("${installation.name} plugin cache file exists, checking if it contains IDEPerformanceDebugger entry yet")
                             val pluginCache = PropertyList.create(pluginCachePath)
                             val containsIDEPerformanceDebuggerInfo = with(XcodeHelper.PlugInCache) {
                                 pluginCache.scanRecords.contains { record ->
@@ -132,13 +144,13 @@ object PluginManager {
 
                             if (containsIDEPerformanceDebuggerInfo) {
                                 // Xcode updated the cache and should work now, we're done.
-                                logger.i { "${installation.name} updated the plugin cache and should work now." }
+                                Console.info("${installation.name} updated the plugin cache and should work now.")
                                 break
                             } else {
-                                logger.i { "${installation.name} plugin cache doesn't contain IDEPerformanceDebugger entry yet." }
+                                Console.info("${installation.name} plugin cache doesn't contain IDEPerformanceDebugger entry yet.")
                             }
                         } else {
-                            logger.i { "${installation.name} plugin cache file doesn't exist yet." }
+                            Console.info("${installation.name} plugin cache file doesn't exist yet.")
                         }
 
                         if (i == fixXcode15Timeout) {
@@ -146,14 +158,12 @@ object PluginManager {
                         }
                     }
                 } finally {
-                    logger.i { "Killing ${installation.name}" }
-                    XcodeHelper.killRunningXcode().checkSuccessful {
-                        "Couldn't shut down Xcode!"
-                    }
+                    Console.info("Killing ${installation.name}")
+                    xcodeRunning.cancelAndJoin()
                 }
             }
     } finally {
-        logger.i { "Disabling IDEPerformanceDebugger built-in plugin." }
+        Console.info("Disabling IDEPerformanceDebugger built-in plugin.")
         XcodeHelper.setIDEPerformanceDebuggerEnabled(false)
     }
 }

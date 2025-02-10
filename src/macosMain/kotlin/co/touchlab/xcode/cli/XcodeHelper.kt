@@ -1,6 +1,5 @@
 package co.touchlab.xcode.cli
 
-import co.touchlab.kermit.Logger
 import co.touchlab.xcode.cli.util.BackupHelper
 import co.touchlab.xcode.cli.util.Console
 import co.touchlab.xcode.cli.util.File
@@ -18,51 +17,48 @@ import platform.posix.exit
 object XcodeHelper {
     val xcodeLibraryPath = Path.home / "Library" / "Developer" / "Xcode"
 
-    private val logger = Logger.withTag("XcodeHelper")
     private val xcodeProcessName = "Xcode"
     private val xcodeVersionRegex = Regex("(\\S+) \\((\\S+)\\)")
 
-    fun ensureXcodeNotRunning() {
-        logger.v { "Checking if any Xcode runs." }
+    suspend fun ensureXcodeNotRunning() {
+        Console.muted("Checking if any Xcode runs.")
         val result = Shell.exec("/usr/bin/pgrep", "-xq", "--", xcodeProcessName)
         if (result.success) {
-            logger.v { "Found running Xcode instance." }
-            val shutdown = Console.confirm("Xcode is running. Attempt to shut down? y/n: ")
+            Console.muted("Found running Xcode instance.")
+            val shutdown = Console.confirm("Xcode is running. Attempt to shut down?")
             if (shutdown) {
-                logger.v { "Shutting down Xcode." }
+                Console.muted("Shutting down Xcode.")
                 Console.echo("Shutting down Xcode...")
                 killRunningXcode().checkSuccessful {
                     "Couldn't shut down Xcode!"
                 }
             } else {
-                Console.printError("Xcode needs to be closed!")
+                Console.danger("Xcode needs to be closed!")
                 exit(1)
             }
         } else {
-            logger.v { "No running Xcode found." }
+            Console.muted("No running Xcode found.")
         }
     }
 
-    fun openInBackground(installation: XcodeInstallation) {
-        // Fix using lower Xcode version than minimum required by macOS:
-        // _LSOpenURLsWithCompletionHandler() failed for the application /Applications/Xcode.app with error -10664.
-        // Usage: ./build/bin/macosArm64/debugExecutable/xcode-kotlin.kexe sync /Applications/Xcode.app
-        val realXcodePath = "${installation.path.value}/Contents/MacOS/Xcode"
-        logger.i { "Opening realXcodePath in background." }
-        Console.echo("Opening realXcodePath in background.")
-        Shell.exec("/usr/bin/open", "-gjF", realXcodePath).checkSuccessful {
-            "Couldn't open ${installation.name} at $realXcodePath!"
+    suspend fun openInBackground(installation: XcodeInstallation) {
+        val xcodeBinaryPath = installation.path / "Contents" / "MacOS" / "Xcode"
+        Console.info("Opening Xcode binary in background ($xcodeBinaryPath).")
+//        Console.echo("Opening realXcodePath in background.")
+
+//        Shell.exec("/usr/bin/open", "-gjF", xcodeBinaryPath.value)
+        Shell.exec(xcodeBinaryPath.value).checkSuccessful {
+            "Couldn't open ${installation.name} at $xcodeBinaryPath!"
         }
     }
 
-    fun killRunningXcode(): Shell.ExecutionResult {
+    suspend fun killRunningXcode(): Shell.ExecutionResult {
         return Shell.exec("/usr/bin/pkill", "-x", xcodeProcessName)
     }
 
-    fun allXcodeInstallations(): List<XcodeInstallation> {
-        val result = Shell.exec("/usr/sbin/system_profiler", "-json", "SPDeveloperToolsDataType").checkSuccessful {
-            "Couldn't get list of installed developer tools."
-        }
+    suspend fun allXcodeInstallations(): List<XcodeInstallation> {
+        val result = Shell.exec("/usr/sbin/system_profiler", "-json", "SPDeveloperToolsDataType")
+            .checkSuccessful { "Couldn't get list of installed developer tools." }
 
         val json = Json {
             ignoreUnknownKeys = true
@@ -78,7 +74,7 @@ object XcodeHelper {
             }
     }
 
-    fun installationAt(path: Path): XcodeInstallation {
+    suspend fun installationAt(path: Path): XcodeInstallation {
         val xcodeFile = File(path)
         require(xcodeFile.exists()) { "Path $path doesn't exist!" }
         val versionPlist = PropertyList.create(path / "Contents" / "version.plist")
@@ -114,8 +110,8 @@ object XcodeHelper {
         )
     }
 
-    fun allowKotlinPlugin(pluginVersion: SemVer, xcodeInstallations: List<XcodeInstallation>) {
-        logger.i { "Adding plugin to allowed list in Xcode defaults." }
+    suspend fun allowKotlinPlugin(pluginVersion: SemVer, xcodeInstallations: List<XcodeInstallation>) {
+        Console.info("Adding plugin to allowed list in Xcode defaults.")
         modifyingXcodeDefaults("BeforeAdd") {
             for (installation in xcodeInstallations) {
                 it.nonApplePlugins(installation.version).allowed.add(xcodeKotlinBundleId, pluginVersion.toString())
@@ -123,8 +119,8 @@ object XcodeHelper {
         }
     }
 
-    fun skipKotlinPlugin(pluginVersion: SemVer, xcodeInstallations: List<XcodeInstallation>) {
-        logger.i { "Adding plugin to skipped list in Xcode defaults." }
+    suspend fun skipKotlinPlugin(pluginVersion: SemVer, xcodeInstallations: List<XcodeInstallation>) {
+        Console.info("Adding plugin to skipped list in Xcode defaults.")
         modifyingXcodeDefaults("BeforeSkip") {
             for (installation in xcodeInstallations) {
                 it.nonApplePlugins(installation.version).skipped.add(xcodeKotlinBundleId, pluginVersion.toString())
@@ -132,8 +128,8 @@ object XcodeHelper {
         }
     }
 
-    fun removeKotlinPluginFromDefaults() {
-        logger.i { "Removing plugin from allowed/skipped list in Xcode defaults." }
+    suspend fun removeKotlinPluginFromDefaults() {
+        Console.info("Removing plugin from allowed/skipped list in Xcode defaults.")
         modifyingXcodeDefaults("BeforeRemove") { properties ->
             properties.allNonApplePlugins().forEach {
                 it.allowed.remove(xcodeKotlinBundleId)
@@ -142,8 +138,8 @@ object XcodeHelper {
         }
     }
 
-    fun setIDEPerformanceDebuggerEnabled(enabled: Boolean) {
-        logger.i { "Setting IDEPerformanceDebuggerEnabled to $enabled in Xcode defaults." }
+    suspend fun setIDEPerformanceDebuggerEnabled(enabled: Boolean) {
+        Console.info("Setting IDEPerformanceDebuggerEnabled to $enabled in Xcode defaults.")
         modifyingXcodeDefaults("BeforeIDEPerformanceDebuggerEnabled-$enabled") {
             it.root.dictionary["IDEPerformanceDebuggerEnabled"] = PropertyList.Object.Number(
                 NSNumber.numberWithBool(enabled)
@@ -151,9 +147,9 @@ object XcodeHelper {
         }
     }
 
-    private inline fun modifyingXcodeDefaults(backupTag: String, modify: Defaults.(PropertyList) -> Unit) {
+    private suspend inline fun modifyingXcodeDefaults(backupTag: String, modify: Defaults.(PropertyList) -> Unit) {
         val backupPath = BackupHelper.backupPath("XcodeDefaults_$backupTag.plist")
-        logger.i { "Saving a backup of com.apple.dt.Xcode defaults to `$backupPath`" }
+        Console.info("Saving a backup of com.apple.dt.Xcode defaults to `$backupPath`")
         Shell.exec("/usr/bin/defaults", "export", "com.apple.dt.Xcode", backupPath.value).checkSuccessful {
             "Couldn't export Xcode defaults."
         }

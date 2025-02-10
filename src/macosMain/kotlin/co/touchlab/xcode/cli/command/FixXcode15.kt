@@ -6,7 +6,7 @@ class FixXcode15: BaseXcodeListSubcommand(
     name = "fix-xcode15",
     actionDescription = "Temporarily workarounds Xcode 15 crash that happens when using any non-Apple Xcode plugins.",
 ) {
-    override fun execute() {
+    override suspend fun run() {
         InstallationFacade.fixXcode15(xcodeInstallations())
     }
 }

@@ -71,5 +71,5 @@ class File(private val providedPath: Path, private val resolveSymlinks: Boolean 
         }
     }
 
-    class IOException(val nsError: NSError): Exception(nsError.description)
+    class IOException(nsError: NSError): Exception(nsError.description)
 }

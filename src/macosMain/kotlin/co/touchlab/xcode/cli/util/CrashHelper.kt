@@ -1,21 +1,23 @@
 package co.touchlab.xcode.cli.util
 
-import co.touchlab.kermit.LogWriter
-import co.touchlab.kermit.Severity
+import com.github.ajalt.mordant.terminal.TerminalRecorder
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
-import platform.Foundation.*
+import platform.Foundation.NSError
+import platform.Foundation.NSMutableURLRequest
+import platform.Foundation.NSURL
+import platform.Foundation.NSURLSession
 import platform.Foundation.NSURLSessionConfiguration.Companion.defaultSessionConfiguration
+import platform.Foundation.NSUTF8StringEncoding
+import platform.Foundation.dataTaskWithRequest
+import platform.Foundation.dataUsingEncoding
+import platform.Foundation.setHTTPBody
+import platform.Foundation.setHTTPMethod
+import platform.Foundation.setValue
 
-class CrashHelper : LogWriter() {
-    private val logEntries = mutableListOf<LogEntry>()
-
-    override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
-        logEntries.add(LogEntry(severity, message, tag, throwable))
-    }
-
-    fun upload(e: Throwable) {
-        upload(capture(e))
+class CrashHelper {
+    fun upload(e: Throwable, recorder: TerminalRecorder) {
+        upload(capture(e, recorder.output()))
     }
 
     private fun upload(crashReport: String) {
@@ -48,25 +50,15 @@ class CrashHelper : LogWriter() {
         }
     }
 
-    private fun capture(e: Throwable): String = buildString {
-        if (logEntries.isNotEmpty()) {
+    private fun capture(e: Throwable, recorderOutput: String): String = buildString {
+        if (recorderOutput.isNotBlank()) {
             append("BREADCRUMBS\n===========\n\n")
-            append(logEntries.joinToString("\n"))
+            append(recorderOutput)
             append("\n\n")
         }
 
         append("FINAL CRASH\n===========\n\n")
         append(e.stackTraceToString())
-    }
-
-    data class LogEntry(val severity: Severity, val message: String, val tag: String, val throwable: Throwable?) {
-        override fun toString(): String = buildString {
-            append("$severity - $tag - $message")
-            throwable?.let<Throwable, Unit> {
-                append("\n")
-                append(it.getStackTrace().joinToString("\n"))
-            }
-        }
     }
 
     class CrashReportUploadException(val error: NSError): Exception("Crash report upload failed: ${error.localizedDescription}")

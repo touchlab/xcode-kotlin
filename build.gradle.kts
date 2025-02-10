@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "co.touchlab"
-version = "2.1.0"
+version = "2.2.0"
 
 kotlin {
     listOf(macosX64(), macosArm64()).forEach {
@@ -31,9 +31,9 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(libs.kotlinx.cli)
+                implementation(libs.clikt)
+                implementation(libs.mordant)
                 implementation(libs.kotlinx.serialization.json)
-                implementation(libs.kermit)
                 implementation(libs.kotlinx.coroutines.core)
             }
         }
@@ -63,7 +63,6 @@ kotlin {
         }
 
         all {
-            languageSettings.optIn("kotlinx.cli.ExperimentalCli")
             languageSettings.optIn("kotlinx.cinterop.BetaInteropApi")
             languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")
         }

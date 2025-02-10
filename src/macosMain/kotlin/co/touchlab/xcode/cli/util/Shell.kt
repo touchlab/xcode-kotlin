@@ -1,7 +1,13 @@
 package co.touchlab.xcode.cli.util
 
-import co.touchlab.kermit.Logger
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCObjectVar
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.Foundation.NSData
+import platform.Foundation.NSError
 import platform.Foundation.NSMutableData
 import platform.Foundation.NSPipe
 import platform.Foundation.NSString
@@ -11,30 +17,25 @@ import platform.Foundation.NSUTF8StringEncoding
 import platform.Foundation.appendData
 import platform.Foundation.closeFile
 import platform.Foundation.create
-import platform.Foundation.launch
 import platform.Foundation.launchPath
 import platform.Foundation.readabilityHandler
+import platform.Foundation.waitUntilExit
 import platform.Foundation.writeData
 import platform.Foundation.writeabilityHandler
-import platform.darwin.DISPATCH_TIME_FOREVER
-import platform.darwin.dispatch_semaphore_create
-import platform.darwin.dispatch_semaphore_signal
-import platform.darwin.dispatch_semaphore_wait
 import platform.posix.EXIT_SUCCESS
-import kotlin.contracts.contract
+import kotlin.coroutines.resume
 
 object Shell {
-    private val logger = Logger.withTag("Shell")
-    fun exec(launchPath: String, vararg arguments: String, input: NSData? = null): ExecutionResult {
+    suspend fun exec(launchPath: String, vararg arguments: String, input: NSData? = null): ExecutionResult {
         return exec(launchPath, arguments.toList(), input)
     }
 
-    fun exec(launchPath: String, arguments: List<String>, input: NSData? = null): ExecutionResult {
+    suspend fun exec(launchPath: String, arguments: List<String>, input: NSData? = null): ExecutionResult {
         return exec(Task(launchPath, arguments, input))
     }
 
-    fun exec(task: Task): ExecutionResult {
-        val waitHandle = dispatch_semaphore_create(0)
+    @OptIn(ExperimentalForeignApi::class)
+    suspend fun exec(task: Task): ExecutionResult {
         val nsTask = NSTask()
         nsTask.launchPath = task.launchPath
         nsTask.arguments = task.arguments
@@ -69,18 +70,26 @@ object Shell {
             taskError.appendData(errorFile.availableData)
         }
 
-        nsTask.terminationHandler = {
-            inputFile?.writeabilityHandler = null
-            outputFile.readabilityHandler = null
-            errorFile.readabilityHandler = null
-            dispatch_semaphore_signal(waitHandle)
+        suspendCancellableCoroutine { continuation ->
+            nsTask.terminationHandler = {
+                inputFile?.writeabilityHandler = null
+                outputFile.readabilityHandler = null
+                errorFile.readabilityHandler = null
+                continuation.resume(Unit)
+            }
+
+            memScoped {
+                val error = alloc<ObjCObjectVar<NSError?>>()
+                nsTask.launchAndReturnError(error.ptr)
+            }
+
+            continuation.invokeOnCancellation {
+                nsTask.terminate()
+                nsTask.waitUntilExit()
+            }
         }
 
-        nsTask.launch()
-
-        dispatch_semaphore_wait(waitHandle, DISPATCH_TIME_FOREVER)
-
-        return ExecutionResult(
+        val result = ExecutionResult(
             task = task,
             outputData = taskOutput,
             output = NSString.create(taskOutput, NSUTF8StringEncoding) as String?,
@@ -88,13 +97,13 @@ object Shell {
             error = NSString.create(taskError, NSUTF8StringEncoding) as String?,
             status = nsTask.terminationStatus,
             reason = nsTask.terminationReason,
-        ).also {
-            if (!it.error.isNullOrBlank()) {
-                logger.w {
-                    "Task $nsTask had non-empty error output:\n\n${it.error}\n"
-                }
-            }
+        )
+
+        if (!result.error.isNullOrBlank()) {
+            Console.warning("Task $nsTask had non-empty error output:\n\n${result.error}\n")
         }
+
+        return result
     }
 
     class Task(

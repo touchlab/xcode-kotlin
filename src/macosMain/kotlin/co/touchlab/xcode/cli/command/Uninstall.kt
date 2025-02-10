@@ -1,10 +1,15 @@
 package co.touchlab.xcode.cli.command
 
 import co.touchlab.xcode.cli.InstallationFacade
-import kotlinx.cli.Subcommand
+import com.github.ajalt.clikt.command.SuspendingCliktCommand
+import com.github.ajalt.clikt.core.Context
 
-class Uninstall: Subcommand("uninstall", "Uninstalls Xcode Kotlin plugin") {
-    override fun execute() {
+class Uninstall: SuspendingCliktCommand("uninstall") {
+    override fun help(context: Context): String {
+        return "Uninstalls Xcode Kotlin plugin"
+    }
+
+    override suspend fun run() {
         InstallationFacade.uninstallAll()
     }
 }
