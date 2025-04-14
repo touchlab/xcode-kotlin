@@ -26,4 +26,7 @@ class KonanStringSyntheticProvider(KonanBaseSyntheticProvider):
 
     def to_string(self):
         s = kotlin_object_to_string(self._process, self._valobj.unsigned)
-        return '"{}"'.format(s) if s else self._valobj.GetValue()
+        if s is None:
+            return self._valobj.GetValue()
+        else:
+            return '"{}"'.format(s)
