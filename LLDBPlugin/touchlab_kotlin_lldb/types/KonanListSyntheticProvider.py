@@ -10,9 +10,11 @@ from .KonanArraySyntheticProvider import KonanArraySyntheticProvider
 
 class KonanListSyntheticProvider(KonanObjectSyntheticProvider):
     __possible_backing_properties = {'backing', '$this_asList', 'backingArray'}
+    __possible_size_properties = {'length'}
 
     def __init__(self, valobj: lldb.SBValue, type_info: lldb.value):
         self._backing: KonanArraySyntheticProvider = None  # type: ignore
+        self._size: Optional[int] = None
 
         super().__init__(valobj, type_info)
 
@@ -35,10 +37,14 @@ class KonanListSyntheticProvider(KonanObjectSyntheticProvider):
             self._backing = backing
 
         self._backing.update()
+        self._size = self._try_update_size()
         return False
 
     def num_children(self):
-        return self._backing.num_children()
+        if self._size is None:
+            return self._backing.num_children()
+        else:
+            return self._size
 
     def has_children(self):
         return True
@@ -50,7 +56,12 @@ class KonanListSyntheticProvider(KonanObjectSyntheticProvider):
         return self._backing.get_child_at_index(index)
 
     def to_string(self):
-        return self._backing.to_string()
+        if self._size is None:
+            return self._backing.to_string()
+        elif self._size == 1:
+            return '1 value'
+        else:
+            return '{} values'.format(self._size)
 
     def _create_backing(self, index: int, name: str) -> Optional[KonanArraySyntheticProvider]:
         address = self.get_child_address_at_index(index)
@@ -64,3 +75,19 @@ class KonanListSyntheticProvider(KonanObjectSyntheticProvider):
             return None
         else:
             return KonanArraySyntheticProvider(backing_value, child_type_info)
+
+    def _try_update_size(self) -> Optional[int]:
+        for index, name in enumerate(self._children_names):
+            if name not in KonanListSyntheticProvider.__possible_size_properties:
+                continue
+            try:
+                value = super().get_child_at_index(index)
+                if value is None or not value.IsValid():
+                    continue
+                size = value.GetValueAsSigned()
+                if size < 0:
+                    continue
+                return int(size)
+            except BaseException:
+                continue
+        return None
