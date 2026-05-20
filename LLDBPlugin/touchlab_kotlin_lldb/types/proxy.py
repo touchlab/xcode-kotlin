@@ -6,7 +6,7 @@ from ..util import evaluate
 from .KonanNotInitializedObjectSyntheticProvider import KonanNotInitializedObjectSyntheticProvider
 from .KonanBaseSyntheticProvider import KonanBaseSyntheticProvider
 from .KonanZerroSyntheticProvider import KonanZerroSyntheticProvider
-from .base import get_type_info, obj_header_pointer, single_pointer
+from .base import get_type_info, obj_header_pointer, objc_bridged_obj_header, single_pointer
 from .select_provider import select_provider
 
 
@@ -20,11 +20,16 @@ class KonanProxyTypeProvider:
             cast_value = obj_header_pointer(self._valobj)
             type_info = get_type_info(cast_value)
 
-            if not type_info:
-                self._proxy = KonanNotInitializedObjectSyntheticProvider(self._valobj)
-                return
-
-            self._proxy = select_provider(cast_value, type_info)
+            if type_info:
+                self._proxy = select_provider(cast_value, type_info)
+            else:
+                bridged = objc_bridged_obj_header(cast_value)
+                bridged_type_info = get_type_info(bridged) if bridged is not None else None
+                if bridged_type_info:
+                    self._proxy = select_provider(bridged, bridged_type_info)
+                else:
+                    self._proxy = KonanNotInitializedObjectSyntheticProvider(self._valobj)
+                    return
 
         return getattr(self._proxy, item)
 
