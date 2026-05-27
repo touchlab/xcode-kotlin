@@ -1,16 +1,29 @@
+from typing import Optional
+
 import lldb
 
 from .select_provider import select_provider
 from .base import get_type_info, obj_header_pointer, objc_bridged_obj_header, single_pointer
-from ..util import log, evaluate
+from ..util import log, evaluate, strip_quotes
+
+
+def _objc_class_name(objc_ptr: int) -> Optional[str]:
+    """Return the ObjC class name for an instance pointer, or None if it can't
+    be read. Used to label a bridged Kotlin object with the class the user
+    actually wrote (e.g. their Swift type) instead of a bare address."""
+    name = evaluate('(const char*)object_getClassName((void*){:#x})', objc_ptr)
+    if name is None or not name.IsValid() or name.error.Fail():
+        return None
+    return strip_quotes(name.summary) or None
 
 
 def _objc_bridge_summary_fallback(cast_value: lldb.SBValue) -> str:
     """Build a summary for a Kotlin object that the Kotlin runtime can't
     describe via Konan_DebugObjectToUtf8Array (typically a Kotlin wrapper
     around a Swift class implementing a Kotlin interface). It looks up the
-    underlying ObjC pointer via Kotlin_ObjCExport_refToObjC so the user
-    sees something useful instead of `None`."""
+    underlying ObjC pointer via Kotlin_ObjCExport_refToObjC and the instance's
+    ObjC class name so the user sees something like `SwiftCallback objc@0x…`
+    instead of `None`."""
     if cast_value.unsigned == 0:
         return "@0x0"
     objc_ptr = evaluate(
@@ -18,6 +31,9 @@ def _objc_bridge_summary_fallback(cast_value: lldb.SBValue) -> str:
         cast_value.unsigned,
     )
     if objc_ptr is not None and objc_ptr.error.Success() and objc_ptr.unsigned != 0:
+        class_name = _objc_class_name(objc_ptr.unsigned)
+        if class_name:
+            return "{} objc@{:#x}".format(class_name, objc_ptr.unsigned)
         return "objc@{:#x}".format(objc_ptr.unsigned)
     return "@{:#x}".format(cast_value.unsigned)
 
