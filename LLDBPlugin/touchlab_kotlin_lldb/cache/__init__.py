@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, Optional, Set
 
 import lldb
 
@@ -28,3 +28,8 @@ class LLDBCache:
         self._array_header_type: Optional[lldb.SBType] = None
         self._runtime_type_size: Optional[lldb.value] = None
         self._runtime_type_alignment: Optional[lldb.value] = None
+        # Modules fully handled (registered or ruled out).
+        self.registered_module_keys: Set[str] = set()
+        # Kotlin modules with `^<module>\.` registered but ObjC prefix not yet
+        # readable; key -> attempt count.
+        self.pending_prefix: Dict[str, int] = {}
