@@ -76,6 +76,22 @@ def obj_header_pointer(valobj: lldb.SBValue) -> lldb.SBValue:
     return single_pointer(valobj).Cast(obj_header_type())
 
 
+def objc_bridged_obj_header(cast_value: lldb.SBValue) -> Optional[lldb.SBValue]:
+    """If cast_value points at an ObjC instance wrapping a Kotlin object,
+    return the corresponding ObjHeader*. Otherwise, return None."""
+    if cast_value.unsigned == 0:
+        return None
+    bridged = evaluate(
+        'void* __result = 0; (ObjHeader*)Kotlin_ObjCExport_refFromObjC((void*){:#x}, &__result)',
+        cast_value.unsigned,
+    )
+    if bridged is None or not bridged.IsValid() or bridged.error.Fail():
+        return None
+    if bridged.unsigned == 0 or bridged.unsigned == cast_value.unsigned:
+        return None
+    return bridged
+
+
 def get_runtime_type(variable):
     return strip_quotes(evaluate("(char *)Konan_DebugGetTypeName({:#x})", variable.unsigned).summary)
 
