@@ -3,6 +3,8 @@ import lldb
 from .KonanStepIn import KonanStepIn
 from .KonanStepOut import KonanStepOut
 from .KonanStepOver import KonanStepOver
+from ..module_registration import scan_and_register_modules
+from ..util.log import log
 
 KONAN_LLDB_DONT_SKIP_BRIDGING_FUNCTIONS = 'KONAN_LLDB_DONT_SKIP_BRIDGING_FUNCTIONS'
 MAX_SIZE_FOR_STOP_REASON = 20
@@ -18,6 +20,13 @@ class KonanHook:
         pass
 
     def handle_stop(self, execution_context: lldb.SBExecutionContext, stream: lldb.SBStream) -> bool:
+        # Side-effect only: try/except so registration can never alter the
+        # stop/continue decision below.
+        try:
+            scan_and_register_modules(execution_context)
+        except Exception as e:
+            log(lambda: 'Kotlin module registration error: {}'.format(e))
+
         is_bridging_functions_skip_enabled = not execution_context.target.GetEnvironment().Get(
             KONAN_LLDB_DONT_SKIP_BRIDGING_FUNCTIONS
         )
