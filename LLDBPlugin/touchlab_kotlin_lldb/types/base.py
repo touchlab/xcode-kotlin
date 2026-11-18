@@ -196,15 +196,38 @@ def void_type() -> lldb.SBType:
     return lldb.debugger.GetSelectedTarget().GetBasicType(lldb.eBasicTypeVoid)
 
 
-def get_type_info(obj: lldb.SBValue) -> Optional[lldb.value]:
-    possible_type_info = obj.CreateValueFromAddress(
-        "typeInfoOrMeta_",
-        obj.Cast(void_type().GetPointerType().GetPointerType()).Dereference().unsigned & ~0x3,
-        type_info_type(),
-    )
-    verification = possible_type_info.Cast(possible_type_info.type.GetPointerType()).Dereference()
+# `ObjHeader::typeInfoOrMeta_` keeps tag bits in its low two bits.
+_TYPE_INFO_TAG_MASK = ~0x3
 
-    if possible_type_info.unsigned == verification.unsigned and possible_type_info.IsValid() and possible_type_info.unsigned != 0:
-        return lldb.value(possible_type_info)
-    else:
+
+def _read_pointer(process: lldb.SBProcess, address: int) -> Optional[int]:
+    error = lldb.SBError()
+    value = process.ReadPointerFromMemory(address, error)
+    return value if error.Success() else None
+
+
+def get_type_info(obj: lldb.SBValue) -> Optional[lldb.value]:
+    """Return the `TypeInfo` of the Kotlin object that `obj` (an `ObjHeader *`) points to, or None when `obj` does
+    not point at a valid Kotlin object header.
+
+    Both pointers are read from process memory rather than through `SBValue.Cast(...).Dereference()`: on Xcode 27.x
+    that sequence yields an invalid value (and `.unsigned` of an aggregate `TypeInfo` value reads as 0), so every
+    Kotlin object was rendered as a raw `(ObjHeader *) 0x...` (touchlab/xcode-kotlin#132)."""
+    process = obj.GetProcess()
+
+    type_info_or_meta = _read_pointer(process, obj.unsigned)
+    if type_info_or_meta is None:
         return None
+    type_info_address = type_info_or_meta & _TYPE_INFO_TAG_MASK
+    if type_info_address == 0:
+        return None
+
+    # `TypeInfo::typeInfo_` is the first field and points back at the `TypeInfo` itself. Any other value means the
+    # memory is not a type info.
+    if _read_pointer(process, type_info_address) != type_info_address:
+        return None
+
+    type_info = obj.CreateValueFromAddress("typeInfoOrMeta_", type_info_address, type_info_type())
+    if not type_info.IsValid():
+        return None
+    return lldb.value(type_info)
